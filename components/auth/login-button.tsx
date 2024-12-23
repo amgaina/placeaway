@@ -1,5 +1,10 @@
 import Link from 'next/link';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { LoginForm } from '@/components/auth/login-form';
 
 interface LoginButtonProps {
@@ -17,6 +22,7 @@ export const LoginButton = ({
       <Dialog>
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="p-0 w-auto bg-transparent border-none">
+          <DialogTitle className="sr-only">Login</DialogTitle>
           <LoginForm />
         </DialogContent>
       </Dialog>
