@@ -3,16 +3,19 @@
 import { useState } from 'react';
 
 interface DateRangePickerProps {
-  dateRange: { from: string; to: string };
-  onDateRangeChange: (dateRange: { from: string; to: string }) => void;
+  dateRange: { from: string | null; to: string | null };
+  onDateRangeChange: (dateRange: {
+    from: string | null;
+    to: string | null;
+  }) => void;
 }
 
 export function DateRangePicker({
   dateRange,
   onDateRangeChange,
 }: DateRangePickerProps) {
-  const [fromDate, setFromDate] = useState(dateRange.from || '');
-  const [toDate, setToDate] = useState(dateRange.to || '');
+  const [fromDate, setFromDate] = useState(dateRange.from ?? '');
+  const [toDate, setToDate] = useState(dateRange.to ?? '');
 
   const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFromDate = e.target.value;
