@@ -1,28 +1,31 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Users, MessageSquare, Share2 } from 'lucide-react'
+import { useState } from 'react';
+import { Users, MessageSquare, Share2 } from 'lucide-react';
 
-export function CollaborationPanel({ tripId }) {
-  console.log(tripId)
-  const [collaborators,] = useState([
+export function CollaborationPanel({ tripId }: { tripId: string }) {
+  console.log(tripId);
+  const [collaborators] = useState([
     { id: 1, name: 'You', avatar: '/placeholder.svg?height=40&width=40' },
     { id: 2, name: 'John Doe', avatar: '/placeholder.svg?height=40&width=40' },
-  ])
+  ]);
 
   const [messages, setMessages] = useState([
     { id: 1, sender: 'John Doe', text: 'How about we add a museum visit?' },
-  ])
+  ]);
 
-  const [newMessage, setNewMessage] = useState('')
+  const [newMessage, setNewMessage] = useState('');
 
-  const sendMessage = (e) => {
-    e.preventDefault()
+  const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (newMessage.trim()) {
-      setMessages([...messages, { id: messages.length + 1, sender: 'You', text: newMessage }])
-      setNewMessage('')
+      setMessages([
+        ...messages,
+        { id: messages.length + 1, sender: 'You', text: newMessage },
+      ]);
+      setNewMessage('');
     }
-  }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -91,6 +94,5 @@ export function CollaborationPanel({ tripId }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

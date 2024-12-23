@@ -1,12 +1,18 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Layout from '../components/layout'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from 'react';
+import Layout from '../components/layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function ProfilePage() {
   const [user, setUser] = useState({
@@ -14,23 +20,25 @@ export default function ProfilePage() {
     email: 'john.doe@example.com',
     bio: 'Avid traveler and adventure seeker',
     avatar: '/placeholder.svg?height=100&width=100',
-  })
+  });
 
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setUser(prevUser => ({
+  const handleInputChange = (e: {
+    target: { name: string; value: string };
+  }) => {
+    const { name, value } = e.target;
+    setUser((prevUser) => ({
       ...prevUser,
-      [name]: value
-    }))
-  }
+      [name]: value,
+    }));
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setIsEditing(false)
+  const handleSubmit = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    setIsEditing(false);
     // Here you would typically send the updated user data to your backend
-  }
+  };
 
   return (
     <Layout>
@@ -53,19 +61,60 @@ export default function ProfilePage() {
             {isEditing ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-                  <Input type="text" id="name" name="name" value={user.name} onChange={handleInputChange} required />
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Name
+                  </label>
+                  <Input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={user.name}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                  <Input type="email" id="email" name="email" value={user.email} onChange={handleInputChange} required />
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Email
+                  </label>
+                  <Input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={user.email}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
-                  <Textarea id="bio" name="bio" value={user.bio} onChange={handleInputChange} rows={4} />
+                  <label
+                    htmlFor="bio"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Bio
+                  </label>
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    value={user.bio}
+                    onChange={handleInputChange}
+                    rows={4}
+                  />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    Cancel
+                  </Button>
                   <Button type="submit">Save Changes</Button>
                 </div>
               </form>
@@ -79,6 +128,5 @@ export default function ProfilePage() {
         </Card>
       </div>
     </Layout>
-  )
+  );
 }
-

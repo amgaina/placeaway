@@ -1,22 +1,33 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { useState } from 'react';
 
-export function DateRangePicker({ dateRange, onDateRangeChange }) {
-  const [fromDate, setFromDate] = useState(dateRange.from || '')
-  const [toDate, setToDate] = useState(dateRange.to || '')
+interface DateRangePickerProps {
+  dateRange: { from: string | null; to: string | null };
+  onDateRangeChange: (dateRange: {
+    from: string | null;
+    to: string | null;
+  }) => void;
+}
 
-  const handleFromDateChange = (e) => {
-    const newFromDate = e.target.value
-    setFromDate(newFromDate)
-    onDateRangeChange({ from: newFromDate, to: toDate })
-  }
+export function DateRangePicker({
+  dateRange,
+  onDateRangeChange,
+}: DateRangePickerProps) {
+  const [fromDate, setFromDate] = useState(dateRange.from ?? '');
+  const [toDate, setToDate] = useState(dateRange.to ?? '');
 
-  const handleToDateChange = (e) => {
-    const newToDate = e.target.value
-    setToDate(newToDate)
-    onDateRangeChange({ from: fromDate, to: newToDate })
-  }
+  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newFromDate = e.target.value;
+    setFromDate(newFromDate);
+    onDateRangeChange({ from: newFromDate, to: toDate });
+  };
+
+  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newToDate = e.target.value;
+    setToDate(newToDate);
+    onDateRangeChange({ from: fromDate, to: newToDate });
+  };
 
   return (
     <div className="flex space-x-2">
@@ -34,6 +45,5 @@ export function DateRangePicker({ dateRange, onDateRangeChange }) {
         className="px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
       />
     </div>
-  )
+  );
 }
-

@@ -1,23 +1,35 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Send, Bot } from 'lucide-react'
+import { useState } from 'react';
+import { Send, Bot } from 'lucide-react';
 
-export function AiTripPlanner({ onPlanGenerated }) {
+export function AiTripPlanner({
+  onPlanGenerated,
+}: {
+  onPlanGenerated: (plan: any) => void;
+}) {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your AI trip planner. How can I assist you with your travel plans?", sender: "ai" }
-  ])
-  const [input, setInput] = useState('')
+    {
+      id: 1,
+      text: "Hello! I'm your AI trip planner. How can I assist you with your travel plans?",
+      sender: 'ai',
+    },
+  ]);
+  const [input, setInput] = useState('');
 
   const handleSend = async () => {
     if (input.trim()) {
-      const userMessage = { id: Date.now(), text: input, sender: "user" }
-      setMessages(prev => [...prev, userMessage])
-      setInput('')
+      const userMessage = { id: Date.now(), text: input, sender: 'user' };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput('');
 
       // Simulate AI response (replace with actual AI integration)
-      const aiResponse = { id: Date.now() + 1, text: "I'm processing your request. Here's a suggested plan based on your input...", sender: "ai" }
-      setMessages(prev => [...prev, aiResponse])
+      const aiResponse = {
+        id: Date.now() + 1,
+        text: "I'm processing your request. Here's a suggested plan based on your input...",
+        sender: 'ai',
+      };
+      setMessages((prev) => [...prev, aiResponse]);
 
       // Simulate generating a plan (replace with actual AI-generated plan)
       const generatedPlan = {
@@ -26,12 +38,12 @@ export function AiTripPlanner({ onPlanGenerated }) {
         travelers: 2,
         elements: [
           // Add mock elements here
-        ]
-      }
+        ],
+      };
 
-      onPlanGenerated(generatedPlan)
+      onPlanGenerated(generatedPlan);
     }
-  }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -44,7 +56,9 @@ export function AiTripPlanner({ onPlanGenerated }) {
               message.sender === 'user' ? 'bg-amber-100 ml-auto' : 'bg-gray-200'
             } max-w-[80%]`}
           >
-            {message.sender === 'ai' && <Bot className="h-4 w-4 inline-block mr-2" />}
+            {message.sender === 'ai' && (
+              <Bot className="h-4 w-4 inline-block mr-2" />
+            )}
             {message.text}
           </div>
         ))}
@@ -65,6 +79,5 @@ export function AiTripPlanner({ onPlanGenerated }) {
         </button>
       </div>
     </div>
-  )
+  );
 }
-

@@ -1,7 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 
-export function BudgetTracker({ budget, setBudget, totalPrice }) {
+interface BudgetTrackerProps {
+  budget: number;
+  setBudget: (budget: number) => void;
+  totalPrice: number;
+}
+
+export function BudgetTracker({
+  budget,
+  setBudget,
+  totalPrice,
+}: BudgetTrackerProps) {
   return (
     <Card>
       <CardHeader>
@@ -22,6 +32,5 @@ export function BudgetTracker({ budget, setBudget, totalPrice }) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

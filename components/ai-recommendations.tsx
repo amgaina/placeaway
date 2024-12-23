@@ -1,11 +1,15 @@
-import { Plane, Hotel, Car, Ticket } from 'lucide-react'
+import { Plane, Hotel, Car, Ticket } from 'lucide-react';
 
 export function AIRecommendations() {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mt-8">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">AI-Powered Recommendations</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        AI-Powered Recommendations
+      </h2>
       <p className="text-gray-600 mb-6">
-        Our AI assistant has generated the following recommendations based on your preferences. You can modify these options or let our AI optimize your trip for the best balance of time and cost efficiency.
+        Our AI assistant has generated the following recommendations based on
+        your preferences. You can modify these options or let our AI optimize
+        your trip for the best balance of time and cost efficiency.
       </p>
       <div className="space-y-6">
         <RecommendationItem
@@ -13,9 +17,9 @@ export function AIRecommendations() {
           title="Flight"
           description="Round-trip, Economy Class"
           details={[
-            "Departure: Austin-Bergstrom International Airport (AUS)",
-            "Arrival: John F. Kennedy International Airport (JFK)",
-            "Airline: American Airlines",
+            'Departure: Austin-Bergstrom International Airport (AUS)',
+            'Arrival: John F. Kennedy International Airport (JFK)',
+            'Airline: American Airlines',
           ]}
         />
         <RecommendationItem
@@ -23,36 +27,45 @@ export function AIRecommendations() {
           title="Accommodation"
           description="4-star hotel in Manhattan"
           details={[
-            "Hotel: The New Yorker, A Wyndham Hotel",
-            "Room: Standard Double Room",
-            "Amenities: Free Wi-Fi, Fitness Center",
+            'Hotel: The New Yorker, A Wyndham Hotel',
+            'Room: Standard Double Room',
+            'Amenities: Free Wi-Fi, Fitness Center',
           ]}
         />
         <RecommendationItem
           icon={Car}
           title="Transportation"
           description="Subway passes and occasional taxi"
-          details={[
-            "7-day unlimited MetroCard",
-            "Estimated taxi budget: $100",
-          ]}
+          details={['7-day unlimited MetroCard', 'Estimated taxi budget: $100']}
         />
         <RecommendationItem
           icon={Ticket}
           title="Activities"
           description="Top-rated New York experiences"
           details={[
-            "Visit to the Statue of Liberty and Ellis Island",
-            "Skip-the-line tickets to the Empire State Building",
-            "Guided tour of the Metropolitan Museum of Art",
+            'Visit to the Statue of Liberty and Ellis Island',
+            'Skip-the-line tickets to the Empire State Building',
+            'Guided tour of the Metropolitan Museum of Art',
           ]}
         />
       </div>
     </div>
-  )
+  );
 }
 
-function RecommendationItem({ icon: Icon, title, description, details }) {
+interface RecommendationItemProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  details: string[];
+}
+
+function RecommendationItem({
+  icon: Icon,
+  title,
+  description,
+  details,
+}: RecommendationItemProps) {
   return (
     <div className="flex items-start">
       <div className="bg-amber-100 rounded-full p-3 mr-4">
@@ -68,6 +81,5 @@ function RecommendationItem({ icon: Icon, title, description, details }) {
         </ul>
       </div>
     </div>
-  )
+  );
 }
-

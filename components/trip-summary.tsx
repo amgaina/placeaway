@@ -1,7 +1,17 @@
-import { Calendar, Users, DollarSign } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Calendar, Users, DollarSign } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function TripSummary({ duration, travelers, totalPrice }) {
+export interface TripSummaryProps {
+  duration: number;
+  travelers: number;
+  totalPrice: number;
+}
+
+export function TripSummary({
+  duration,
+  travelers,
+  totalPrice,
+}: TripSummaryProps) {
   return (
     <Card>
       <CardHeader>
@@ -24,6 +34,5 @@ export function TripSummary({ duration, travelers, totalPrice }) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

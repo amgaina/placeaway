@@ -1,15 +1,18 @@
 import Link from 'next/link';
-import { MountainSnow, Search, User, Settings, LogOut } from 'lucide-react';
+import { MountainSnow, Search } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { currentUser } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { LoginButton } from '@/components/auth/login-button';
+import { UserButton } from '@/components/auth/user-button';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await currentUser();
+
   return (
     <TooltipProvider>
       <div className="flex flex-col min-h-screen bg-background">
@@ -48,31 +51,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <Search className="h-6 w-6" />
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Avatar className="h-8 w-8 cursor-pointer">
-                      <AvatarImage
-                        src="/placeholder.svg?height=32&width=32"
-                        alt="User avatar"
-                      />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+
+                {user ? (
+                  <UserButton />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <LoginButton mode="modal" asChild>
+                      <Button variant={'outline'}>Sign In</Button>
+                    </LoginButton>
+                    <LoginButton mode="modal" asChild>
+                      <Button>Sign Up</Button>
+                    </LoginButton>
+                  </div>
+                )}
               </div>
             </div>
           </div>

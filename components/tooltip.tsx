@@ -1,10 +1,15 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export const Tooltip = ({ content, children }) => {
-  const [isVisible, setIsVisible] = useState(false)
+export interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+}
+
+export const Tooltip = ({ content, children }: TooltipProps) => {
+  const [isVisible, setIsVisible] = useState(false);
 
   return (
     <div
@@ -27,6 +32,5 @@ export const Tooltip = ({ content, children }) => {
         )}
       </AnimatePresence>
     </div>
-  )
-}
-
+  );
+};
