@@ -10,6 +10,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^17.0.0",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.4",
@@ -28,7 +29,6 @@
     "lucide-react": "^0.469.0",
     "next": "15.1.2",
     "react": "^18.3.1",
-    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7"
