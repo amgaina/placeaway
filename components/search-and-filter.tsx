@@ -1,9 +1,19 @@
-import { Search } from 'lucide-react'
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function SearchAndFilter({ searchQuery, setSearchQuery, handleSearch }) {
+export interface SearchAndFilterProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  handleSearch: (e: React.FormEvent<HTMLFormElement>) => void;
+}
+
+export function SearchAndFilter({
+  searchQuery,
+  setSearchQuery,
+  handleSearch,
+}: SearchAndFilterProps) {
   return (
     <Card>
       <CardHeader>
@@ -25,6 +35,5 @@ export function SearchAndFilter({ searchQuery, setSearchQuery, handleSearch }) {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
-

@@ -1,10 +1,25 @@
-import Image from 'next/image'
-import Link from 'next/link'
-import { DollarSign, Clock, Star } from 'lucide-react'
+import Image from 'next/image';
+import Link from 'next/link';
+import { DollarSign, Clock, Star } from 'lucide-react';
 
-export default function DestinationCard({ destination }) {
+export interface DestinationCardProps {
+  destination: {
+    name: string;
+    description: string;
+    price: number;
+    duration: number;
+    rating: number;
+    category: string;
+    image: string;
+  };
+}
+
+export default function DestinationCard({ destination }: DestinationCardProps) {
   return (
-    <Link href={`/explore/${destination.name.toLowerCase().replace(/\s+/g, '-')}`} className="group">
+    <Link
+      href={`/explore/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
+      className="group"
+    >
       <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow">
         <div className="relative h-48">
           <Image
@@ -38,6 +53,5 @@ export default function DestinationCard({ destination }) {
         </div>
       </div>
     </Link>
-  )
+  );
 }
-

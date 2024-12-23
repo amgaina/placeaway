@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from '@hello-pangea/dnd';
 import { Plane, Hotel, Car, Ticket, MessageCircle } from 'lucide-react';
 import { ChatInterface } from './chat-interface';
 
@@ -36,7 +41,7 @@ export function InteractiveTripPlayground() {
   const [tripElements, setTripElements] = useState(initialTripElements);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const onDragEnd = (result) => {
+  const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
     const items = Array.from(tripElements);
