@@ -1,18 +1,10 @@
 import Link from 'next/link';
-import { MountainSnow, Search, User, Settings, LogOut } from 'lucide-react';
+import { MountainSnow, Search } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import { currentUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { LoginButton } from '@/components/auth/login-button';
-import { signOut } from '@/auth';
+import { UserButton } from '@/components/auth/user-button';
 
 export default async function Layout({
   children,
@@ -61,43 +53,7 @@ export default async function Layout({
                 </Link>
 
                 {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Avatar className="h-8 w-8 cursor-pointer">
-                        <AvatarImage
-                          src={
-                            user.image || '/placeholder.svg?height=32&width=32'
-                          }
-                          alt={user.name || 'User avatar'}
-                        />
-                        <AvatarFallback>
-                          {user.name ? user.name[0].toUpperCase() : 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/settings">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Settings</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => signOut({ redirectTo: '/' })}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <UserButton />
                 ) : (
                   <div className="flex items-center gap-2">
                     <LoginButton mode="modal" asChild>

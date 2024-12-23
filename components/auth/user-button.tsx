@@ -8,8 +8,9 @@ import {
 import { LogoutButton } from '@/components/auth/logout-button';
 import { FaUser } from 'react-icons/fa';
 import { ExitIcon } from '@radix-ui/react-icons';
-import { SettingsIcon } from 'lucide-react';
+import { Link, Settings, User } from 'lucide-react';
 import { currentUser } from '@/lib/auth';
+import { DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
 
 export const UserButton = async () => {
   const user = await currentUser();
@@ -24,17 +25,22 @@ export const UserButton = async () => {
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-40" align="end">
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem>
+          <User className="h-4 w-4" />
+          <a href="/profile">Profile</a>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Settings className="h-4 w-4" />
+          <a href="/settings">Settings</a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <LogoutButton>
           <DropdownMenuItem>
             <ExitIcon className="h-4 w-4" />
-            Logout
+            Sign out
           </DropdownMenuItem>
         </LogoutButton>
-        <DropdownMenuItem>
-          <SettingsIcon className="h-4 w-4" />
-          <a href="/settings">Settings</a>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
