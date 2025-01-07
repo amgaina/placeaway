@@ -82,21 +82,24 @@ export default function Home() {
                 name: 'Bali, Indonesia',
                 image: '/Images/place_image/bali.png',
                 description: 'Island paradise',
+                id: 'bali',
               },
               {
                 name: 'Santorini, Greece',
                 image: '/Images/place_image/santorini.png',
                 description: 'Breathtaking sunsets',
+                id: 'santorini',
               },
               {
                 name: 'Machu Picchu, Peru',
                 image: '/Images/place_image/machu_picchu.png',
                 description: 'Ancient wonders',
+                id: 'machu-picchu',
               },
             ].map((destination) => (
               <Link
                 key={destination.name}
-                href={`/explore/${destination.name.toLowerCase().replace(', ', '-')}`}
+                href={`/destination/${destination.id}`}
                 className="group"
               >
                 <div className="relative h-64 rounded-lg overflow-hidden shadow-md">
