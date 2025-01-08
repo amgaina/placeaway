@@ -44,7 +44,7 @@ const plans = [
   },
   {
     name: 'Enterprise',
-    price: '($125 Fixed) + $3 per individual',
+    price: '($325 Fixed) + $8 per individual',
     description: 'For small-large organizations with group travelers.',
     targetMarket: 'Medium-Large Organizations (25+ individuals)',
     vacationDeals: 'Deals on Every Purchase',

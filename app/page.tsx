@@ -102,12 +102,15 @@ export default function Home() {
                 href={`/destination/${destination.id}`}
                 className="group"
               >
-                <div className="relative h-64 rounded-lg overflow-hidden shadow-md">
+                <div
+                  className="h-64 rounded-lg overflow-hidden shadow-md"
+                  style={{ position: 'relative' }}
+                >
                   <Image
                     src={destination.image}
                     alt={destination.name}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{ objectFit: 'cover' }}
                     className="group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-opacity" />
