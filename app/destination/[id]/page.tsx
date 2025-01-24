@@ -11,12 +11,6 @@ import {
 import Link from 'next/link';
 import ExpandableDescription from '@/components/expandabledescription';
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
-
 const destinations = {
   bali: {
     name: 'Bali, Indonesia',
@@ -41,8 +35,13 @@ const destinations = {
   },
 };
 
-export default async function Page({ params }: PageProps) {
-  const { id } = await params;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const id = (await params).id;
+
   const destination = destinations[id as keyof typeof destinations];
 
   if (!destination) {
