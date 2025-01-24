@@ -82,29 +82,35 @@ export default function Home() {
                 name: 'Bali, Indonesia',
                 image: '/Images/place_image/bali.png',
                 description: 'Island paradise',
+                id: 'bali',
               },
               {
                 name: 'Santorini, Greece',
                 image: '/Images/place_image/santorini.png',
                 description: 'Breathtaking sunsets',
+                id: 'santorini',
               },
               {
                 name: 'Machu Picchu, Peru',
                 image: '/Images/place_image/machu_picchu.png',
                 description: 'Ancient wonders',
+                id: 'machu-picchu',
               },
             ].map((destination) => (
               <Link
                 key={destination.name}
-                href={`/explore/${destination.name.toLowerCase().replace(', ', '-')}`}
+                href={`/destination/${destination.id}`}
                 className="group"
               >
-                <div className="relative h-64 rounded-lg overflow-hidden shadow-md">
+                <div
+                  className="h-64 rounded-lg overflow-hidden shadow-md"
+                  style={{ position: 'relative' }}
+                >
                   <Image
                     src={destination.image}
                     alt={destination.name}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{ objectFit: 'cover' }}
                     className="group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-opacity" />
