@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+{
+  /* Travel Page */
+}
 export default function TravelPage() {
   return (
     <div className="bg-slate-100 text-slate-800 p-6 min-h-screen">
