@@ -48,7 +48,7 @@ export default function Home() {
             Your Journey, Your Way
           </h1>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Experience unparalleled flexibility with TripZens AI-powered travel
+            Experience unparalleled flexibility with Placeaway AI-powered travel
             planning and customizable packages.
           </p>
           <div className="max-w-3xl mx-auto">
@@ -329,13 +329,13 @@ export default function Home() {
                 name: 'Sarah L.',
                 location: 'New York, USA',
                 quote:
-                  "TripZen's customizable packages allowed me to create my dream European adventure. The AI recommendations were spot-on!",
+                  "Placeaway's customizable packages allowed me to create my dream European adventure. The AI recommendations were spot-on!",
               },
               {
                 name: 'Carlos M.',
                 location: 'Barcelona, Spain',
                 quote:
-                  "As a frequent traveler, I love how TripZen lets me choose alternative services. It's perfect for my ever-changing travel style.",
+                  "As a frequent traveler, I love how Placeaway lets me choose alternative services. It's perfect for my ever-changing travel style.",
               },
               {
                 name: 'Yuki T.',

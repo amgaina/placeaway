@@ -1,77 +1,85 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Layout from '../components/layout'
-import { AbstractLines, AbstractShapes } from '@/components/decorative-elements'
-import { TripPlannerForm } from '@/components/trip-planner-form'
-import { DraftList } from '@/components/draft-list'
+import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
-export default function Plan() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [drafts, setDrafts] = useState<Array<{ id: string; name: string; destinations: string[]; duration: number; travelers: number }>>([])
+import { Button } from '@/components/ui/button';
 
-  useEffect(() => {
-    // In a real application, you would fetch drafts from your backend or local storage
-    const mockDrafts = [
-      { id: 'draft1', name: 'Paris Getaway', destinations: ['Paris'], duration: 7, travelers: 2 },
-      { id: 'draft2', name: 'Asian Adventure', destinations: ['Tokyo', 'Seoul', 'Bangkok'], duration: 14, travelers: 3 },
-      { id: 'draft3', name: 'European Tour', destinations: ['London', 'Paris', 'Rome'], duration: 10, travelers: 2 },
-    ]
-    setDrafts(mockDrafts)
-  }, [])
+const popularDestinations = [
+  { name: 'Paris', image: '/Images/place_image/paris.png' },
+  { name: 'Tokyo', image: '/Images/place_image/tokyo.png' },
+  { name: 'Rome', image: '/Images/place_image/rome.png' },
+  { name: 'Bali', image: '/Images/place_image/bali.png' },
+];
 
-  const handleGeneratePlan = async () => {
-    setIsLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    // In a real application, you would send the plan details to your backend
-    // and receive a unique trip ID in response
-    const tripId = 'unique-trip-id'
-    setIsLoading(false)
-    router.push(`/playground?tripId=${tripId}`)
-  }
+export default function PlanPage() {
+  const [destination, setDestination] = useState('');
+  const router = useRouter();
 
-  const handleContinueDraft = (draftId: string) => {
-    // In a real application, you would fetch the draft details from your backend
-    // and navigate to the playground with the draft data
-    router.push(`/playground?draftId=${draftId}`)
-  }
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (destination.trim()) {
+      router.push(`/booking/${encodeURIComponent(destination.toLowerCase())}`);
+    }
+  };
 
   return (
-    <Layout>
-      <section className="relative py-12 bg-gray-100 overflow-hidden">
-        <AbstractShapes className="text-amber-200 opacity-30 top-0 right-0" />
-        <AbstractLines className="text-sky-200 opacity-30 bottom-0 left-0" />
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Plan Your Dream Trip</h1>
-          <div className="max-w-4xl mx-auto">
-            <TripPlannerForm onGeneratePlan={handleGeneratePlan} isLoading={isLoading} />
-          </div>
-        </div>
-      </section>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold text-center mb-8">
+        Where do you want to go?
+      </h1>
 
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">Your Drafts</h2>
-          <DraftList drafts={drafts} onContinueDraft={handleContinueDraft} onDeleteDraft={function (draftId: string): void {
-            console.log(draftId)
-            throw new Error('Function not implemented.')
-          } } />
+      <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-12">
+        <div className="flex items-center bg-white rounded-full overflow-hidden shadow-lg">
+          <Input
+            type="text"
+            placeholder="Enter your destination"
+            className="flex-grow px-6 py-4 text-lg text-gray-700 focus:outline-none"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            className="bg-teal-500 text-white px-8 py-4 hover:bg-teal-600 transition-colors"
+          >
+            <Search className="h-6 w-6" />
+          </Button>
         </div>
-      </section>
+      </form>
 
-      <section className="py-12 bg-gradient-to-r from-sky-500 to-amber-500 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Need Inspiration?</h2>
-          <p className="text-xl mb-8">Check out our curated travel guides for popular destinations.</p>
-          <button className="bg-white text-sky-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-            Explore Travel Guides
-          </button>
-        </div>
-      </section>
-    </Layout>
-  )
+      <h2 className="text-2xl font-semibold text-center mb-6">
+        Popular Destinations
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {popularDestinations.map((destination) => (
+          <Link
+            key={destination.name}
+            href={`/booking/${destination.name.toLowerCase()}`}
+            className="group"
+          >
+            <div className="relative h-64 rounded-lg overflow-hidden shadow-md">
+              <Image
+                src={destination.image || '/placeholder.svg'}
+                alt={destination.name}
+                layout="fill"
+                objectFit="cover"
+                className="group-hover:scale-110 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-opacity" />
+              <div className="absolute bottom-4 left-4">
+                <h3 className="text-white text-2xl font-semibold">
+                  {destination.name}
+                </h3>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
-
