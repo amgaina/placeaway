@@ -15,7 +15,7 @@ export default function BookingPolicy() {
             <div className="flex items-start mb-6">
               <Info className="h-6 w-6 text-amber-500 mr-3 flex-shrink-0 mt-1" />
               <p className="text-gray-600 leading-relaxed">
-                At TripZen, we strive to provide you with the best travel
+                At Placeaway, we strive to provide you with the best travel
                 experience. Our services include both advisory assistance and
                 direct bookings. Please note that refund policies may vary
                 depending on the type of service or package you choose.
@@ -28,7 +28,7 @@ export default function BookingPolicy() {
                 </h3>
                 <ul className="space-y-3">
                   {[
-                    'Refunds available as per our policy for packages booked directly through TripZen',
+                    'Refunds available as per our policy for packages booked directly through Placeaway',
                     'Cancellation terms clearly stated at the time of booking',
                     'Our support team can assist with the refund process',
                   ].map((item, index) => (

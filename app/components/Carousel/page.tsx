@@ -15,6 +15,13 @@ const Carousel = () => {
     '/Images/Carousel/carousel-4.png',
     '/Images/Carousel/carousel-5.png',
     '/Images/Carousel/carousel-6.png',
+    '/Images/Carousel/carousel-8.png',
+    '/Images/Carousel/carousel-9.png',
+    '/Images/Carousel/carousel-10.png',
+    '/Images/Carousel/carousel-11.png',
+    '/Images/Carousel/carousel-12.png',
+    '/Images/Carousel/carousel-13.png',
+    '/Images/Carousel/carousel-7.png',
   ];
 
   const settings = {

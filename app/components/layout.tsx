@@ -78,7 +78,7 @@ export default async function Layout({
                 <Link href="/" className="flex items-center space-x-2">
                   <MountainSnow className="h-8 w-8 text-primary" />
                   <span className="text-2xl font-bold text-foreground">
-                    TripZen
+                    Placeaway
                   </span>
                 </Link>
                 <p className="mt-4">
@@ -86,12 +86,14 @@ export default async function Layout({
                 </p>
               </div>
               <div className="w-full md:w-1/4 mb-8 md:mb-0">
-                <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+                <h3 className="text-lg font-semibold mb-4 text-white">
+                  Quick Links
+                </h3>
                 <ul className="space-y-2">
                   <li>
                     <Link
                       href="/explore"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       Explore
                     </Link>
@@ -99,7 +101,7 @@ export default async function Layout({
                   <li>
                     <Link
                       href="/plan"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       Plan
                     </Link>
@@ -107,7 +109,7 @@ export default async function Layout({
                   <li>
                     <Link
                       href="/my-trip"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       My Trip
                     </Link>
@@ -120,7 +122,7 @@ export default async function Layout({
                   <li>
                     <Link
                       href="/faq"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       FAQ
                     </Link>
@@ -128,7 +130,7 @@ export default async function Layout({
                   <li>
                     <Link
                       href="/contact"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       Contact Us
                     </Link>
@@ -136,7 +138,7 @@ export default async function Layout({
                   <li>
                     <Link
                       href="/privacy"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       Privacy Policy
                     </Link>
@@ -144,7 +146,7 @@ export default async function Layout({
                   <li>
                     <Link
                       href="/terms"
-                      className="hover:text-primary transition-colors"
+                      className="hover:text-black text-white transition-colors"
                     >
                       Terms of Service
                     </Link>
@@ -156,7 +158,7 @@ export default async function Layout({
                 <div className="flex space-x-4">
                   <a
                     href="#"
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                    className="text-muted-foreground hover:text-black text-white transition-colors"
                   >
                     <svg
                       className="h-6 w-6"
@@ -173,7 +175,7 @@ export default async function Layout({
                   </a>
                   <a
                     href="#"
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                    className="text-muted-foreground hover:text-black text-white transition-colors"
                   >
                     <svg
                       className="h-6 w-6"
@@ -190,7 +192,7 @@ export default async function Layout({
                   </a>
                   <a
                     href="#"
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                    className="text-muted-foreground hover:text-black text-white transition-colors"
                   >
                     <svg
                       className="h-6 w-6"
@@ -205,7 +207,7 @@ export default async function Layout({
               </div>
             </div>
             <div className="mt-8 border-t border-primary-foreground/20 pt-8 text-center">
-              <p>&copy; 2023 TripZen. All rights reserved.</p>
+              <p>&copy; 2025 Placeaway. All rights reserved.</p>
             </div>
           </div>
         </footer>
