@@ -28,7 +28,7 @@ export function ItineraryView({
                 <h3 className="font-semibold">Day {day.day}</h3>
                 <ul className="list-disc list-inside">
                   {day.activities.map((activity, i) => (
-                    <li key={i}>{activity}</li>
+                    <li key={i}>{activity.title}</li>
                   ))}
                 </ul>
               </div>

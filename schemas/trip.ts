@@ -27,11 +27,11 @@ export const BudgetSchema = z.object({
 
 export const ActivitySchema = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
+  description: z.string(),
   startTime: z.date(),
   endTime: z.date(),
-  location: z.string().optional(),
-  cost: z.number().optional(),
+  location: z.string(),
+  cost: z.number(),
 });
 
 export const ItinerarySchema = z.object({
@@ -51,7 +51,7 @@ export interface AIMessage {
 
 export const AITripSuggestionSchema = z.object({
   destination: z.string(),
-  activities: z.array(z.string()),
+  activities: z.array(ActivitySchema),
   budget: z.object({
     accommodation: z.number(),
     transport: z.number(),
@@ -63,8 +63,8 @@ export const AITripSuggestionSchema = z.object({
   itinerary: z.array(
     z.object({
       day: z.number(),
-      activities: z.array(z.string()),
-      date: z.string().optional(),
+      activities: z.array(ActivitySchema),
+      date: z.string(),
     }),
   ),
 });
@@ -73,7 +73,7 @@ export type AITripSuggestion = z.infer<typeof AITripSuggestionSchema>;
 
 export const ChatMessageSchema = z.object({
   content: z.string().min(1),
-  role: z.enum(['user', 'assistant']),
+  role: z.enum(['USER', 'ASSISTANT']),
 });
 
 export type ChatMessageInput = z.infer<typeof ChatMessageSchema>;

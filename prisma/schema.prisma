@@ -131,6 +131,8 @@ model Trip {
   endDate     DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  hasAISuggestions Boolean @default(false)
+  aiGeneratedAt   DateTime?
 
   user        User     @relation(fields: [userId], references: [id])
   preferences TripPreference?
@@ -167,11 +169,16 @@ model ChatSession {
   @@map("chat_sessions")
 }
 
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+}
+
 model ChatMessage {
   id            String   @id @default(cuid())
   sessionId     String
   content       String   @db.Text
-  role          String   // user or assistant
+  role          ChatMessageRole   // user or assistant
   createdAt     DateTime @default(now())
   
   session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)

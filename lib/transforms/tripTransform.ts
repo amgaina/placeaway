@@ -12,7 +12,14 @@ export function transformTripData(
   return {
     destination: trip.preferences?.destination || 'Unknown',
     activities: trip.itineraries.flatMap((i) =>
-      i.activities.map((a) => a.title),
+      i.activities.map((a) => ({
+        title: a.title,
+        startTime: a.startTime,
+        endTime: a.endTime,
+        description: a.description ?? '',
+        location: a.location ?? '',
+        cost: a.cost ?? 0,
+      })),
     ),
     budget: {
       accommodation: trip.budget?.accommodation || 0,
@@ -26,7 +33,14 @@ export function transformTripData(
       .map((s) => s.messages[0].content),
     itinerary: trip.itineraries.map((i) => ({
       day: i.day,
-      activities: i.activities.map((a) => a.title),
+      activities: i.activities.map((a) => ({
+        title: a.title,
+        startTime: a.startTime,
+        endTime: a.endTime,
+        description: a.description ?? '',
+        location: a.location ?? '',
+        cost: a.cost ?? 0,
+      })),
       date: i.date.toISOString(),
     })),
   };

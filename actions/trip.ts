@@ -8,6 +8,7 @@ import {
   BudgetSchema,
 } from '@/schemas/trip';
 import { currentUser } from '@/lib/auth';
+import { TripAIService } from '@/services/TripAIService';
 
 export async function createTrip(values: z.infer<typeof TripPreferenceSchema>) {
   try {
@@ -60,5 +61,17 @@ export async function getUserTrips() {
     return { success: 'Trips fetched successfully', data: trips };
   } catch (error) {
     return { error: 'Failed to fetch trips' };
+  }
+}
+
+export async function getTripWithDetails(tripId: string) {
+  try {
+    const user = await currentUser();
+    if (!user?.id) return { error: 'Unauthorized' };
+
+    const trip = await TripService.getTripWithDetails(tripId);
+    return { success: 'Trip fetched successfully', data: trip };
+  } catch (error) {
+    return { error: 'Failed to fetch trip' };
   }
 }

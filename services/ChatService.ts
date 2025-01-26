@@ -1,6 +1,8 @@
 import { db } from '@/lib/db';
-import { AIService } from './AIService';
-import { ChatMessageInput } from '@/schemas/trip';
+import { TripAIService } from './TripAIService';
+import { ChatMessageInput, ChatMessageSchema } from '@/schemas/trip';
+import { processChatMessage } from '@/actions/ai';
+import { z } from 'zod';
 
 export class ChatService {
   static async verifyTripOwnership(
@@ -30,29 +32,30 @@ export class ChatService {
       }));
 
     // Save user message
-    const userMessage = await db.chatMessage.create({
-      data: {
-        sessionId: session.id,
-        content: message.content,
-        role: message.role,
-      },
-    });
+    const userMessage: z.infer<typeof ChatMessageSchema> =
+      await db.chatMessage.create({
+        data: {
+          sessionId: session.id,
+          content: message.content,
+          role: message.role,
+        },
+      });
 
     // Get all messages for context
     const messages = [...session.messages, userMessage].map((msg) => ({
-      role: msg.role as 'user' | 'assistant',
+      role: msg.role,
       content: msg.content,
     }));
 
     // Get AI response
-    const aiResponse = await AIService.processChatMessage(tripId, messages);
+    const aiResponse = await processChatMessage(tripId, messages);
 
     // Save AI response
     const assistantMessage = await db.chatMessage.create({
       data: {
         sessionId: session.id,
-        content: aiResponse,
-        role: 'assistant',
+        content: aiResponse.data,
+        role: 'ASSISTANT',
       },
     });
 

@@ -4,7 +4,9 @@ import {
   TripPreferenceInput,
   BudgetInput,
   ItineraryInput,
+  AITripSuggestion,
 } from '@/schemas/trip';
+import { TripAIService } from '@/services/TripAIService';
 
 export class TripService {
   static async createTrip(
@@ -91,7 +93,7 @@ export class TripService {
   }
 
   static async getTripWithDetails(tripId: string) {
-    return db.trip.findUnique({
+    const trip = await db.trip.findUnique({
       where: { id: tripId },
       include: {
         preferences: true,
@@ -103,12 +105,81 @@ export class TripService {
         },
         chatSessions: {
           include: {
-            messages: {
-              orderBy: {
-                createdAt: 'asc',
-              },
-            },
+            messages: true,
           },
+        },
+      },
+    });
+
+    if (!trip) throw new Error('Trip not found');
+
+    if (!trip.hasAISuggestions) {
+      if (!trip.preferences) throw new Error('Trip preferences not found');
+      // Generate AI suggestions if missing
+      const { origin, destination, ...rest } = trip.preferences;
+
+      if (!origin || !destination) {
+        throw new Error('Trip origin and destination are required');
+      }
+
+      const suggestions = await TripAIService.generateTripSuggestion({
+        ...rest,
+        origin: origin || undefined,
+        destination: destination || undefined,
+      });
+
+      if (!suggestions) {
+        throw new Error('Failed to generate AI suggestions');
+      }
+
+      await this.updateTripWithAISuggestions(tripId, suggestions);
+      trip.hasAISuggestions = true;
+      trip.aiGeneratedAt = new Date();
+    }
+
+    return trip;
+  }
+
+  static async updateTripWithAISuggestions(
+    tripId: string,
+    suggestions: AITripSuggestion,
+  ) {
+    return db.trip.update({
+      where: { id: tripId },
+      data: {
+        hasAISuggestions: true,
+        aiGeneratedAt: new Date(),
+        budget: {
+          create: {
+            ...suggestions.budget,
+            total: Object.values(suggestions.budget).reduce(
+              (sum, value) => sum + value,
+              0,
+            ),
+          },
+        },
+        itineraries: {
+          create: suggestions.itinerary.map((day) => ({
+            day: day.day,
+            date: day.date ? new Date(day.date) : new Date(),
+            activities: {
+              create: day.activities.map((activity) => ({
+                title: typeof activity === 'string' ? activity : activity.title,
+                description:
+                  typeof activity === 'string' ? '' : activity.description,
+                startTime:
+                  typeof activity === 'string'
+                    ? new Date()
+                    : new Date(activity.startTime),
+                endTime:
+                  typeof activity === 'string'
+                    ? new Date()
+                    : new Date(activity.endTime),
+                location: typeof activity === 'string' ? '' : activity.location,
+                cost: typeof activity === 'string' ? 0 : activity.cost,
+              })),
+            },
+          })),
         },
       },
     });

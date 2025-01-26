@@ -1,7 +1,7 @@
 'use server';
 
 import * as z from 'zod';
-import { AIService } from '@/services/AIService';
+import { TripAIService } from '@/services/TripAIService';
 import { currentUser } from '@/lib/auth';
 import { ChatMessageSchema, TripPreferenceSchema } from '@/schemas/trip';
 import { ChatService } from '@/services/ChatService';
@@ -16,7 +16,7 @@ export const generateTripSuggestion = async (
       return { error: 'Unauthorized' };
     }
 
-    const suggestion = await AIService.generateTripSuggestion(
+    const suggestion = await TripAIService.generateTripSuggestion(
       values.preferences,
     );
     return { success: 'Suggestion generated', data: suggestion };
@@ -27,8 +27,8 @@ export const generateTripSuggestion = async (
 
 export const processChatMessage = async (
   tripId: string,
-  values: z.infer<typeof ChatMessageSchema>,
-) => {
+  values: z.infer<typeof ChatMessageSchema>[],
+): Promise<{ error?: string; success?: string; data?: any }> => {
   try {
     const user = await currentUser();
 
@@ -44,8 +44,8 @@ export const processChatMessage = async (
 
     // Process chat using service
     const response = await ChatService.processMessage(tripId, {
-      content: values.content,
-      role: 'user',
+      content: values[values.length - 1].content,
+      role: 'USER',
     });
 
     return { success: 'Message processed', data: response };

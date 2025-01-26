@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { TripService } from '@/services/TripService';
 import { AITripSuggestion } from '@/schemas/trip';
 import { transformTripData } from '@/lib/transforms/tripTransform';
 import { TravelOverview } from '@/components/trip/TravelOverview';
@@ -10,24 +9,56 @@ import { BudgetTracker } from '@/components/trip/BudgetTracker';
 import { ItineraryView } from '@/components/trip/ItineraryView';
 import { ChatInterface } from '@/components/trip/ChatInterface';
 import { RecommendationsList } from '@/components/trip/RecommendationsList';
+import { FaDatabase, FaRobot, FaMapMarkedAlt } from 'react-icons/fa';
+import { LoadingSteps } from '@/components/loading/LoadingSteps';
+import { getTripWithDetails } from '@/actions/trip';
+
+const loadingSteps = [
+  {
+    id: 1,
+    title: 'Loading Trip Data',
+    description: 'Fetching your travel information',
+    icon: <FaDatabase className="w-6 h-6" />,
+  },
+  {
+    id: 2,
+    title: 'Generating AI Suggestions',
+    description: 'Creating personalized recommendations',
+    icon: <FaRobot className="w-6 h-6" />,
+  },
+  {
+    id: 3,
+    title: 'Preparing Interface',
+    description: 'Setting up your travel dashboard',
+    icon: <FaMapMarkedAlt className="w-6 h-6" />,
+  },
+];
 
 export default function TripPage() {
   const [tripData, setTripData] = useState<AITripSuggestion | null>(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
+  const [loadingStep, setLoadingStep] = useState(1);
 
   useEffect(() => {
     async function loadTripData() {
       try {
-        const result = await TripService.getTripWithDetails(
-          params.id as string,
-        );
-        if (result) {
-          const transformedData = transformTripData(result);
+        setLoadingStep(1);
+        const result = await getTripWithDetails(params.id as string);
+
+        if (result && 'data' in result && result.data) {
+          setLoadingStep(2);
+          setIsGeneratingAI(true);
+          const transformedData = transformTripData(result.data);
           setTripData(transformedData);
+          setLoadingStep(3);
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       } catch (err) {
         setError('Failed to load trip data');
+      } finally {
+        setIsGeneratingAI(false);
       }
     }
 
@@ -38,8 +69,12 @@ export default function TripPage() {
     return <ErrorView message={error} />;
   }
 
-  if (!tripData) {
-    return <LoadingView />;
+  if (!tripData || isGeneratingAI) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <LoadingSteps steps={loadingSteps} currentStep={loadingStep} />
+      </div>
+    );
   }
 
   return (
@@ -65,10 +100,11 @@ export default function TripPage() {
   );
 }
 
-function LoadingView() {
+function LoadingView({ message }: { message: string }) {
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
       <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+      <p className="text-sky-700 font-medium">{message}</p>
     </div>
   );
 }
