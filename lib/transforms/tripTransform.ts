@@ -41,7 +41,7 @@ export function transformTripData(
         location: a.location ?? '',
         cost: a.cost ?? 0,
       })),
-      date: i.date.toISOString(),
+      date: i.date,
     })),
   };
 }

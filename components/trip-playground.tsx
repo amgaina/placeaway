@@ -1,105 +1,163 @@
-'use client'
+'use client';
 
-import { useState, useEffect, SetStateAction, ChangeEvent } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Plane, Hotel, MapPin, Plus, Edit2, ArrowRight, Car, Train, Bus, Trash2, Save, Search, CheckCircle, Share2, CreditCard } from 'lucide-react'
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import dynamic from 'next/dynamic'
-import { TripSummary } from './trip-summary'
-import { BudgetTracker } from './budget-tracker'
+import { useState, useEffect, SetStateAction, ChangeEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Plane,
+  Hotel,
+  MapPin,
+  Plus,
+  Edit2,
+  ArrowRight,
+  Car,
+  Train,
+  Bus,
+  Trash2,
+  Save,
+  Search,
+  CheckCircle,
+  Share2,
+  CreditCard,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import dynamic from 'next/dynamic';
+import { TripSummary } from './trip-summary';
+// import { BudgetTracker } from './budget-tracker'
 // import { SearchAndFilter } from './search-and-filter'
 // import { RecommendationSystem } from './recommendation-system'
-import { Label } from '@/components/ui/label'
-import { Textarea } from "@/components/ui/textarea"
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-const MapWithNoSSR = dynamic(() => import('./map'), { ssr: false })
+const MapWithNoSSR = dynamic(() => import('./map'), { ssr: false });
 
 const elementTypes = {
-  flight: { icon: Plane, color: 'bg-blue-100 text-blue-600', connection: 'flight' },
-  hotel: { icon: Hotel, color: 'bg-green-100 text-green-600', connection: 'stay' },
-  activity: { icon: MapPin, color: 'bg-yellow-100 text-yellow-600', connection: 'activity' },
-  transport: { icon: ArrowRight, color: 'bg-purple-100 text-purple-600', connection: 'transport' },
-}
+  flight: {
+    icon: Plane,
+    color: 'bg-blue-100 text-blue-600',
+    connection: 'flight',
+  },
+  hotel: {
+    icon: Hotel,
+    color: 'bg-green-100 text-green-600',
+    connection: 'stay',
+  },
+  activity: {
+    icon: MapPin,
+    color: 'bg-yellow-100 text-yellow-600',
+    connection: 'activity',
+  },
+  transport: {
+    icon: ArrowRight,
+    color: 'bg-purple-100 text-purple-600',
+    connection: 'transport',
+  },
+};
 
 const transportIcons = {
   car: Car,
   train: Train,
   bus: Bus,
   flight: Plane,
-}
+};
 export interface ElementInterface {
   details: {
-    transportType?: 'car' | 'train' | 'bus' | 'flight'
-    description: string,
-    price: number,
-    airline?: string,
-    flightNumber?: string,
-    departureTime?: string,
-    arrivalTime?: string,
-    duration?: string,
-    checkIn?: string,
-    checkOut?: string,
-    roomType?: string,
-    pricePerNight?: number,
-    date?: string,
-    location?: string,
-    additionalInfo?: string,
-    distance?: string,
-    ticketPurchased?: boolean,
-    reservationConfirmed?: boolean,
-    gasPrice?: number,
-  }
+    transportType?: 'car' | 'train' | 'bus' | 'flight';
+    description: string;
+    price: number;
+    airline?: string;
+    flightNumber?: string;
+    departureTime?: string;
+    arrivalTime?: string;
+    duration?: string;
+    checkIn?: string;
+    checkOut?: string;
+    roomType?: string;
+    pricePerNight?: number;
+    date?: string;
+    location?: string;
+    additionalInfo?: string;
+    distance?: string;
+    ticketPurchased?: boolean;
+    reservationConfirmed?: boolean;
+    gasPrice?: number;
+  };
 
   id: string;
   type: keyof typeof elementTypes;
 }
 
 export interface TripTimelineProps {
-  elements: ElementInterface[]
-  updateElement: (id: string, details: Partial<ElementInterface['details']>) => void
-  removeElement: (id: string) => void
-  addElement: (index: number, type?: keyof typeof elementTypes) => void
-  moveElement: (fromIndex: number, toIndex: number) => void
+  elements: ElementInterface[];
+  updateElement: (
+    id: string,
+    details: Partial<ElementInterface['details']>,
+  ) => void;
+  removeElement: (id: string) => void;
+  addElement: (index: number, type?: keyof typeof elementTypes) => void;
+  moveElement: (fromIndex: number, toIndex: number) => void;
 }
 export interface TripElementProps {
-  element: ElementInterface
-  updateElement: (id: string, details: Partial<ElementInterface['details']>) => void
-  removeElement: (id: string) => void
-  index: number
-  moveElement: (fromIndex: number, toIndex: number) => void
+  element: ElementInterface;
+  updateElement: (
+    id: string,
+    details: Partial<ElementInterface['details']>,
+  ) => void;
+  removeElement: (id: string) => void;
+  index: number;
+  moveElement: (fromIndex: number, toIndex: number) => void;
 }
 
-const TripElement = ({ element, updateElement, removeElement, index, moveElement }:TripElementProps) => {
-  const { icon: Icon, color } = elementTypes[element.type]
-  const TransportIcon = element.details.transportType ? transportIcons[element.details.transportType] : Icon
+const TripElement = ({
+  element,
+  updateElement,
+  removeElement,
+  index,
+  moveElement,
+}: TripElementProps) => {
+  const { icon: Icon, color } = elementTypes[element.type];
+  const TransportIcon = element.details.transportType
+    ? transportIcons[element.details.transportType]
+    : Icon;
 
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedDetails, setEditedDetails] = useState({ ...element.details })
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDetails, setEditedDetails] = useState({ ...element.details });
 
   const handleEdit = () => {
-    setIsEditing(true)
-  }
+    setIsEditing(true);
+  };
 
   const handleSave = () => {
-    updateElement(element.id, editedDetails)
-    setIsEditing(false)
-  }
+    updateElement(element.id, editedDetails);
+    setIsEditing(false);
+  };
 
   const handleRemove = () => {
-    removeElement(element.id)
-  }
+    removeElement(element.id);
+  };
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setEditedDetails(prev => ({
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setEditedDetails((prev) => ({
       ...prev,
-      [name]: value
-    }))
-  }
+      [name]: value,
+    }));
+  };
 
   // const dragRef = useRef<number | null>(null)
 
@@ -181,11 +239,16 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
                 type="checkbox"
                 id="ticketPurchased"
                 checked={editedDetails.ticketPurchased || false}
-                onChange={(e) => setEditedDetails(prev => ({ ...prev, ticketPurchased: e.target.checked }))}
+                onChange={(e) =>
+                  setEditedDetails((prev) => ({
+                    ...prev,
+                    ticketPurchased: e.target.checked,
+                  }))
+                }
               />
             </div>
           </div>
-        )
+        );
       case 'hotel':
         return (
           <div className="space-y-2">
@@ -229,16 +292,23 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
               placeholder="Additional information (e.g., amenities, nearby attractions)"
             />
             <div className="flex items-center space-x-2">
-              <Label htmlFor="reservationConfirmed">Reservation Confirmed</Label>
+              <Label htmlFor="reservationConfirmed">
+                Reservation Confirmed
+              </Label>
               <input
                 type="checkbox"
                 id="reservationConfirmed"
                 checked={editedDetails.reservationConfirmed || false}
-                onChange={(e) => setEditedDetails(prev => ({ ...prev, reservationConfirmed: e.target.checked }))}
+                onChange={(e) =>
+                  setEditedDetails((prev) => ({
+                    ...prev,
+                    reservationConfirmed: e.target.checked,
+                  }))
+                }
               />
             </div>
           </div>
-        )
+        );
       case 'activity':
         return (
           <div className="space-y-2">
@@ -288,11 +358,16 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
                 type="checkbox"
                 id="ticketPurchased"
                 checked={editedDetails.ticketPurchased || false}
-                onChange={(e) => setEditedDetails(prev => ({ ...prev, ticketPurchased: e.target.checked }))}
+                onChange={(e) =>
+                  setEditedDetails((prev) => ({
+                    ...prev,
+                    ticketPurchased: e.target.checked,
+                  }))
+                }
               />
             </div>
           </div>
-        )
+        );
       case 'transport':
         return (
           <div className="space-y-2">
@@ -305,7 +380,9 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
             />
             <Select
               value={editedDetails.transportType}
-              onValueChange={(value: 'car' | 'train' | 'bus' | 'flight') => setEditedDetails(prev => ({ ...prev, transportType: value }))}
+              onValueChange={(value: 'car' | 'train' | 'bus' | 'flight') =>
+                setEditedDetails((prev) => ({ ...prev, transportType: value }))
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Transport type" />
@@ -350,11 +427,11 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
               placeholder="Additional information (e.g., stops, travel conditions)"
             />
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <motion.div
@@ -383,7 +460,11 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
-              <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
+              <Button
+                onClick={() => setIsEditing(false)}
+                variant="outline"
+                size="sm"
+              >
                 Cancel
               </Button>
             </div>
@@ -391,7 +472,9 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
         ) : (
           <>
             <span className="flex-grow">{element.details.description}</span>
-            <span className="ml-2 text-sm font-semibold">${element.details.price}</span>
+            <span className="ml-2 text-sm font-semibold">
+              ${element.details.price}
+            </span>
             {element.details.ticketPurchased && (
               <Tooltip>
                 <TooltipTrigger>
@@ -422,12 +505,16 @@ const TripElement = ({ element, updateElement, removeElement, index, moveElement
         )}
       </div>
     </motion.div>
-  )
-}
+  );
+};
 
-
-
-const TripTimeline = ({ elements, updateElement, removeElement, addElement, moveElement }: TripTimelineProps) => {
+const TripTimeline = ({
+  elements,
+  updateElement,
+  removeElement,
+  addElement,
+  moveElement,
+}: TripTimelineProps) => {
   return (
     <div className="relative mt-8 mb-12">
       <div className="absolute top-0 bottom-0 left-6 w-0.5 bg-gray-300"></div>
@@ -441,7 +528,9 @@ const TripTimeline = ({ elements, updateElement, removeElement, addElement, move
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <div className={`absolute left-5 w-3 h-3 rounded-full ${elementTypes[element.type].color.split(' ')[0]} border-2 border-white`}></div>
+            <div
+              className={`absolute left-5 w-3 h-3 rounded-full ${elementTypes[element.type].color.split(' ')[0]} border-2 border-white`}
+            ></div>
             <div className="ml-12 w-full">
               <TripElement
                 element={element}
@@ -456,9 +545,11 @@ const TripTimeline = ({ elements, updateElement, removeElement, addElement, move
             )}
             {index < elements.length - 1 && (
               <div className="absolute left-5 top-full mt-4 transform -translate-x-1/2">
-                {elementTypes[elements[index + 1].type].connection === 'flight' ? (
+                {elementTypes[elements[index + 1].type].connection ===
+                'flight' ? (
                   <Plane className="h-4 w-4 text-blue-500" />
-                ) : elementTypes[elements[index + 1].type].connection === 'transport' ? (
+                ) : elementTypes[elements[index + 1].type].connection ===
+                  'transport' ? (
                   <ArrowRight className="h-4 w-4 text-purple-500" />
                 ) : (
                   <div className="h-2 w-2 rounded-full bg-gray-400"></div>
@@ -475,18 +566,20 @@ const TripTimeline = ({ elements, updateElement, removeElement, addElement, move
         <Plus className="h-4 w-4" />
       </button>
     </div>
-  )
-}
+  );
+};
 
-const DestinationSearch = ({ onSearch }: {
-  onSearch: (query: string) => void
+const DestinationSearch = ({
+  onSearch,
+}: {
+  onSearch: (query: string) => void;
 }) => {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState('');
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
-    e.preventDefault()
-    onSearch(query)
-  }
+    e.preventDefault();
+    onSearch(query);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="mb-4">
@@ -504,15 +597,26 @@ const DestinationSearch = ({ onSearch }: {
         </Button>
       </div>
     </form>
-  )
-}
+  );
+};
 
 interface AIRecommendationsProps {
-  recommendations: { description: string, type: keyof typeof elementTypes, price: number }[]
-  onAddToItinerary: (recommendation: { description: string, type: keyof typeof elementTypes, price: number }) => void
+  recommendations: {
+    description: string;
+    type: keyof typeof elementTypes;
+    price: number;
+  }[];
+  onAddToItinerary: (recommendation: {
+    description: string;
+    type: keyof typeof elementTypes;
+    price: number;
+  }) => void;
 }
 
-const AIRecommendations = ({ recommendations, onAddToItinerary }: AIRecommendationsProps) => {
+const AIRecommendations = ({
+  recommendations,
+  onAddToItinerary,
+}: AIRecommendationsProps) => {
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -531,18 +635,20 @@ const AIRecommendations = ({ recommendations, onAddToItinerary }: AIRecommendati
         </ul>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-const CollaborationPanel = ({ onShare }: {
-  onShare: (email: string) => void
+const CollaborationPanel = ({
+  onShare,
+}: {
+  onShare: (email: string) => void;
 }) => {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('');
 
   const handleShare = () => {
-    onShare(email)
-    setEmail('')
-  }
+    onShare(email);
+    setEmail('');
+  };
 
   return (
     <Card className="mb-4">
@@ -564,12 +670,10 @@ const CollaborationPanel = ({ onShare }: {
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-const BookingPanel = ({ onBook }: {
-  onBook: () => void
-}) => {
+const BookingPanel = ({ onBook }: { onBook: () => void }) => {
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -582,80 +686,124 @@ const BookingPanel = ({ onBook }: {
         </Button>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
 interface TripPlaygroundProps {
-  tripData: { duration: number, travelers: number, elements: ElementInterface[] }
-  onTripUpdate: (updatedTrip: { duration: number, travelers: number, elements: ElementInterface[] }) => void
-  onSaveDraft: (tripData: { duration: number, travelers: number, elements: ElementInterface[] }) => void
+  tripData: {
+    duration: number;
+    travelers: number;
+    elements: ElementInterface[];
+  };
+  onTripUpdate: (updatedTrip: {
+    duration: number;
+    travelers: number;
+    elements: ElementInterface[];
+  }) => void;
+  onSaveDraft: (tripData: {
+    duration: number;
+    travelers: number;
+    elements: ElementInterface[];
+  }) => void;
 }
 
-
-export function TripPlayground({ tripData, onTripUpdate, onSaveDraft }: TripPlaygroundProps) {
-  const [elements, setElements] = useState(tripData.elements)
-  const [totalPrice, setTotalPrice] = useState(0)
-  const [budget, setBudget] = useState(5000)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showMap, setShowMap] = useState(false)
-  const [aiRecommendations, setAiRecommendations] = useState<{ description: string; type: keyof typeof elementTypes; price: number; }[]>([])
+export function TripPlayground({
+  tripData,
+  onTripUpdate,
+  onSaveDraft,
+}: TripPlaygroundProps) {
+  const [elements, setElements] = useState(tripData.elements);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [budget, setBudget] = useState(5000);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState<
+    { description: string; type: keyof typeof elementTypes; price: number }[]
+  >([]);
 
   useEffect(() => {
-    const newTotalPrice = elements.reduce((sum, element) => sum + element.details.price, 0)
-    setTotalPrice(newTotalPrice)
-  }, [elements])
+    const newTotalPrice = elements.reduce(
+      (sum, element) => sum + element.details.price,
+      0,
+    );
+    setTotalPrice(newTotalPrice);
+  }, [elements]);
 
-  const addElement = (index: number | undefined, type: keyof typeof elementTypes = 'activity') => {
+  const addElement = (
+    index: number | undefined,
+    type: keyof typeof elementTypes = 'activity',
+  ) => {
     const newElement: ElementInterface = {
       id: `element${elements.length + 1}`,
       type,
       details: { description: `New ${type}`, price: 0 },
-    }
-    const newElements = [...elements.slice(0, index), newElement, ...elements.slice(index)]
-    setElements(newElements)
-    onTripUpdate({ ...tripData, elements: newElements })
-  }
+    };
+    const newElements = [
+      ...elements.slice(0, index),
+      newElement,
+      ...elements.slice(index),
+    ];
+    setElements(newElements);
+    onTripUpdate({ ...tripData, elements: newElements });
+  };
 
-  const updateElement = (id: string, newDetails: Partial<ElementInterface['details']>) => {
-    const updatedElements = elements.map(element =>
-      element.id === id ? { ...element, details: { ...element.details, ...newDetails } } : element
-    )
-    setElements(updatedElements)
-    onTripUpdate({ ...tripData, elements: updatedElements })
-  }
+  const updateElement = (
+    id: string,
+    newDetails: Partial<ElementInterface['details']>,
+  ) => {
+    const updatedElements = elements.map((element) =>
+      element.id === id
+        ? { ...element, details: { ...element.details, ...newDetails } }
+        : element,
+    );
+    setElements(updatedElements);
+    onTripUpdate({ ...tripData, elements: updatedElements });
+  };
 
   const removeElement = (id: string) => {
-    const updatedElements = elements.filter(element => element.id !== id)
-    setElements(updatedElements)
-    onTripUpdate({ ...tripData, elements: updatedElements })
-  }
+    const updatedElements = elements.filter((element) => element.id !== id);
+    setElements(updatedElements);
+    onTripUpdate({ ...tripData, elements: updatedElements });
+  };
 
   const moveElement = (fromIndex: number, toIndex: number) => {
-    const newElements = [...elements]
-    const [movedElement] = newElements.splice(fromIndex, 1)
-    newElements.splice(toIndex, 0, movedElement)
-    setElements(newElements)
-    onTripUpdate({ ...tripData, elements: newElements })
-  }
+    const newElements = [...elements];
+    const [movedElement] = newElements.splice(fromIndex, 1);
+    newElements.splice(toIndex, 0, movedElement);
+    setElements(newElements);
+    onTripUpdate({ ...tripData, elements: newElements });
+  };
 
   const handleSaveDraft = () => {
-    onSaveDraft({ ...tripData, elements })
-  }
+    onSaveDraft({ ...tripData, elements });
+  };
 
   const handleSearch = (query: SetStateAction<string>) => {
-    setSearchQuery(query)
+    setSearchQuery(query);
     // Simulating AI recommendations based on search
-    const mockRecommendations: { description: string; type: keyof typeof elementTypes; price: number; }[] = [
+    const mockRecommendations: {
+      description: string;
+      type: keyof typeof elementTypes;
+      price: number;
+    }[] = [
       { description: 'Visit Tokyo Skytree', type: 'activity', price: 20 },
       { description: 'Explore Shibuya Crossing', type: 'activity', price: 0 },
       { description: 'Traditional Tea Ceremony', type: 'activity', price: 50 },
-      { description: 'Day trip to Nikko National Park', type: 'activity', price: 100 },
+      {
+        description: 'Day trip to Nikko National Park',
+        type: 'activity',
+        price: 100,
+      },
       { description: 'Stay at Shinjuku Hotel', type: 'hotel', price: 150 },
-    ]
-    setAiRecommendations(mockRecommendations)
-  }
+    ];
+    setAiRecommendations(mockRecommendations);
+  };
 
-  const handleAddToItinerary = (recommendation: { type: keyof typeof elementTypes; description: string; price: number }) => {
+  const handleAddToItinerary = (recommendation: {
+    type: keyof typeof elementTypes;
+    description: string;
+    price: number;
+  }) => {
     const newElement = {
       id: `element${elements.length + 1}`,
       type: recommendation.type,
@@ -664,52 +812,58 @@ export function TripPlayground({ tripData, onTripUpdate, onSaveDraft }: TripPlay
         price: recommendation.price,
         isVerified: false,
       },
-    }
-    const newElements = [...elements, newElement]
-    setElements(newElements)
-    onTripUpdate({ ...tripData, elements: newElements })
-  }
+    };
+    const newElements = [...elements, newElement];
+    setElements(newElements);
+    onTripUpdate({ ...tripData, elements: newElements });
+  };
 
   const handleShare = (email: string) => {
     // Implement sharing logic here
-    console.log(`Sharing itinerary with ${email}`)
-  }
+    console.log(`Sharing itinerary with ${email}`);
+  };
 
   const handleBook = () => {
     // Implement booking logic here
-    console.log('Booking trip')
-  }
+    console.log('Booking trip');
+  };
 
-  const filteredElements = elements.filter(element =>
-    element.details.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredElements = elements.filter((element) =>
+    element.details.description
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()),
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6 text-center">Placeaway Trip Playground</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          Placeaway Trip Playground
+        </h1>
         <DestinationSearch onSearch={handleSearch} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+          <div className="lg:col-span-2">
             <TripTimeline
               elements={filteredElements}
               updateElement={updateElement}
               removeElement={removeElement}
-              addElement={(index: number, type?: keyof typeof elementTypes) => addElement(index, type)}
+              addElement={(index: number, type?: keyof typeof elementTypes) =>
+                addElement(index, type)
+              }
               moveElement={moveElement}
             />
-            </div>
+          </div>
           <div className="space-y-8">
             <TripSummary
               duration={tripData.duration}
               travelers={tripData.travelers}
               totalPrice={totalPrice}
             />
-            <BudgetTracker
+            {/* <BudgetTracker
               budget={budget}
               setBudget={setBudget}
               totalPrice={totalPrice}
-            />
+            /> */}
             <AIRecommendations
               recommendations={aiRecommendations}
               onAddToItinerary={handleAddToItinerary}
@@ -734,6 +888,5 @@ export function TripPlayground({ tripData, onTripUpdate, onSaveDraft }: TripPlay
         )}
       </div>
     </div>
-  )
+  );
 }
-
