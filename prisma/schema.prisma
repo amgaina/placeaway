@@ -269,4 +269,8 @@ model TripRecommendation {
   trip        Trip                   @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@map("trip_recommendations")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@unique([email, isRead])
 }
