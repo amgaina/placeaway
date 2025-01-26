@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   try {
     // Create admin user
-    const adminPassword = await hash('Admin@123', 10);
+    const adminPassword = await hash('Admin@123456', 12);
     await prisma.user.upsert({
       where: { email: 'admin@placeaway.com' },
       update: {},
@@ -19,22 +19,22 @@ async function main() {
       },
     });
 
-    // Create regular users
-    const userPassword = await hash('User@123', 10);
+    // Create regular users with strong passwords
+    const userPassword = await hash('User@123456', 12);
     const users = [
       {
-        email: 'john@example.com',
+        email: 'john.doe@example.com',
         name: 'John Doe',
         password: userPassword,
       },
       {
-        email: 'jane@example.com',
+        email: 'jane.smith@example.com',
         name: 'Jane Smith',
         password: userPassword,
       },
       {
-        email: 'bob@example.com',
-        name: 'Bob Wilson',
+        email: 'robert.wilson@example.com',
+        name: 'Robert Wilson',
         password: userPassword,
       },
     ];
