@@ -1,8 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { AITripSuggestion } from '@/schemas/trip';
 import { Budget } from '@prisma/client';
-import { Euro, Plane, Calendar } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
+import { Calendar, Edit2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { deleteTrip } from '@/actions/trip';
 
 export function BudgetTracker({ budget }: { budget: Budget }) {
   const total = budget.total;
@@ -17,7 +31,7 @@ export function BudgetTracker({ budget }: { budget: Budget }) {
     <Card className="bg-white shadow-md">
       <CardHeader className="p-4 bg-sky-100">
         <CardTitle className="text-2xl flex items-center gap-2 text-sky-700">
-          <Euro className="h-6 w-6" />
+          <DollarSign className="h-6 w-6" />
           Budget Tracker
         </CardTitle>
       </CardHeader>
@@ -34,7 +48,7 @@ export function BudgetTracker({ budget }: { budget: Budget }) {
               className="flex items-center justify-between bg-sky-50 p-2 rounded"
             >
               <div className="flex items-center gap-2">
-                <Euro className="h-4 w-4 text-sky-600" />
+                <DollarSign className="h-4 w-4 text-sky-600" />
                 <span>{key}</span>
               </div>
               <span>${value}</span>

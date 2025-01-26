@@ -107,7 +107,7 @@ export async function generateTripSuggestions(
     );
 
     console.log('suggestions', suggestions);
-    if (!suggestions) {
+    if (!suggestions || !suggestions.budget || !suggestions.itinerary) {
       return { error: 'Failed to generate suggestions' };
     }
     const updatedTrip = await TripService.updateTripWithAISuggestions(
@@ -118,5 +118,47 @@ export async function generateTripSuggestions(
     return { success: 'Suggestions generated successfully', data: updatedTrip };
   } catch (error) {
     return { error: 'Failed to generate suggestions' };
+  }
+}
+
+export async function updateTripPreferences(
+  tripId: string,
+  values: z.infer<typeof TripPreferenceSchema>,
+) {
+  try {
+    const user = await currentUser();
+    if (!user?.id) return { error: 'Unauthorized' };
+
+    // Set hasAISuggestions to false
+    await TripService.updateTrip(tripId, values, true);
+
+    // Generate new AI suggestions
+    const suggestions = await TripAIService.generateTripSuggestion(
+      values.preferences,
+    );
+
+    if (!suggestions) {
+      return { error: 'Failed to generate AI suggestions' };
+    }
+    const updatedTrip = await TripService.updateTripWithAISuggestions(
+      tripId,
+      suggestions,
+    );
+
+    return { success: 'Trip updated successfully', data: updatedTrip };
+  } catch (error) {
+    return { error: 'Failed to update trip' };
+  }
+}
+
+export async function deleteTrip(tripId: string) {
+  try {
+    const user = await currentUser();
+    if (!user?.id) return { error: 'Unauthorized' };
+
+    await TripService.deleteTrip(tripId);
+    return { success: 'Trip deleted successfully' };
+  } catch (error) {
+    return { error: 'Failed to delete trip' };
   }
 }

@@ -10,15 +10,17 @@ import { ChatInterface } from '@/components/trip/ChatInterface';
 import { RecommendationsList } from '@/components/trip/RecommendationsList';
 import { FaDatabase, FaRobot, FaMapMarkedAlt } from 'react-icons/fa';
 import { LoadingSteps } from '@/components/loading/LoadingSteps';
-import { getTripWithDetails } from '@/actions/trip';
+import { getTripWithDetails, updateTripPreferences } from '@/actions/trip';
 import FullPageErrorView from '@/components/error/full-page-error-view';
 import { useLoadScript, GoogleMap, Marker } from '@react-google-maps/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Calendar, MessageCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { PreferencesForm } from '@/components/trip/PreferencesForm';
+import { TripHeader } from '@/components/trip/TripHeader';
+import { TripActions } from '@/components/trip/TripActions';
 
 const loadingSteps = [
   {
@@ -43,7 +45,7 @@ const loadingSteps = [
 
 const defaultCenter = { lat: 27.7172, lng: 85.324 }; // Default coordinates (example: Kathmandu)
 
-export default function TripDetailsPage() {
+export default function TripPage() {
   const [tripData, setTripData] =
     useState<TripWithPreferencesAndBudgetAndTripRecommendation | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -58,6 +60,7 @@ export default function TripDetailsPage() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: ['places'],
   });
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     async function loadTripData() {
@@ -95,6 +98,14 @@ export default function TripDetailsPage() {
     loadTripData();
   }, [params.id]);
 
+  const handleUpdate = async (values: any) => {
+    setIsEditing(false);
+    const result = await updateTripPreferences(params.id as string, values);
+    if (result.data) {
+      setTripData(result.data);
+    }
+  };
+
   if (error) {
     return <FullPageErrorView message={error} />;
   }
@@ -109,102 +120,92 @@ export default function TripDetailsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Progress Bar */}
-      <div className="sticky top-0 z-50 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-semibold text-primary">
-              {tripData.title} Adventure
-            </h1>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" className="gap-2">
-                <Calendar className="w-4 h-4" />
-                {format(new Date(tripData.startDate ?? new Date()), 'MMM dd')} -
-                {format(
-                  new Date(tripData.endDate ?? new Date()),
-                  'MMM dd, yyyy',
-                )}
-              </Button>
-              <Button
-                onClick={() => setIsChatOpen(true)}
-                className="bg-primary text-white"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Modify Trip
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <TripHeader trip={tripData} onEdit={() => setIsEditing(true)} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          <TravelOverview data={tripData} />
+      <div className="max-w-7xl mx-auto p-6">
+        {isEditing ? (
+          <PreferencesForm
+            defaultValues={tripData || undefined}
+            onSubmit={handleUpdate}
+            onCancel={() => setIsEditing(false)}
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-6">
+                <TravelOverview data={tripData} />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Trip Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Progress value={33} className="h-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Planning</span>
-                  <span>In Progress</span>
-                  <span>Completed</span>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Trip Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <Progress value={33} className="h-2" />
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Planning</span>
+                        <span>In Progress</span>
+                        <span>Completed</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <ItineraryView
+                  itinerary={tripData.itineraries}
+                  onPlaceSelect={setSelectedPlace}
+                />
+
+                {tripData.budget && <BudgetTracker budget={tripData.budget} />}
+              </div>
+
+              {/* Map Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="sticky top-24 space-y-6">
+                  {isLoaded && (
+                    <Card className="overflow-hidden">
+                      <GoogleMap
+                        zoom={13}
+                        center={selectedPlace?.location || defaultCenter}
+                        mapContainerClassName="w-full h-[400px]"
+                      >
+                        {tripData.itineraries.map((day) =>
+                          day.activities.map((activity) => (
+                            <Marker
+                              key={activity.id}
+                              position={
+                                activity.lat && activity.lng
+                                  ? { lat: activity.lat, lng: activity.lng }
+                                  : defaultCenter
+                              }
+                              onClick={() =>
+                                setSelectedPlace({
+                                  location: {
+                                    lat: activity?.lat ?? defaultCenter.lat,
+                                    lng: activity?.lng ?? defaultCenter.lng,
+                                  },
+                                })
+                              }
+                            />
+                          )),
+                        )}
+                      </GoogleMap>
+                    </Card>
+                  )}
+
+                  <RecommendationsList
+                    recommendations={tripData.recommendations ?? []}
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <ItineraryView
-            itinerary={tripData.itineraries}
-            onPlaceSelect={setSelectedPlace}
-          />
-
-          {tripData.budget && <BudgetTracker budget={tripData.budget} />}
-        </div>
-
-        {/* Map Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-24 space-y-6">
-            {isLoaded && (
-              <Card className="overflow-hidden">
-                <GoogleMap
-                  zoom={13}
-                  center={selectedPlace?.location || defaultCenter}
-                  mapContainerClassName="w-full h-[400px]"
-                >
-                  {tripData.itineraries.map((day) =>
-                    day.activities.map((activity) => (
-                      <Marker
-                        key={activity.id}
-                        position={
-                          activity.lat && activity.lng
-                            ? { lat: activity.lat, lng: activity.lng }
-                            : defaultCenter
-                        }
-                        onClick={() =>
-                          setSelectedPlace({
-                            location: {
-                              lat: activity?.lat ?? defaultCenter.lat,
-                              lng: activity?.lng ?? defaultCenter.lng,
-                            },
-                          })
-                        }
-                      />
-                    )),
-                  )}
-                </GoogleMap>
-              </Card>
-            )}
-
-            <RecommendationsList
-              recommendations={tripData.recommendations ?? []}
-            />
-          </div>
-        </div>
+            <div className="mt-6">
+              <TripActions tripId={params.id as string} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Floating Chat Interface */}

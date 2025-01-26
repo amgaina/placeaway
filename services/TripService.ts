@@ -30,11 +30,13 @@ export class TripService {
   static async updateTrip(
     tripId: string,
     data: Partial<TripPreferenceInput>,
+    hasAISuggestions = false,
   ): Promise<Trip> {
     return db.trip.update({
       where: { id: tripId },
       data: {
         ...data,
+        hasAISuggestions: hasAISuggestions,
         preferences: data.preferences
           ? {
               update: data.preferences,
