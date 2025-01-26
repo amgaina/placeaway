@@ -13,6 +13,8 @@ import {
   FaMapMarkedAlt,
 } from 'react-icons/fa';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { TripPreferenceSchema } from '@/schemas/trip';
 
 type Step = {
   id: number;
@@ -53,7 +55,7 @@ export default function ConfirmationPage() {
       try {
         // Step 1: Create Trip
         setCurrentStep(1);
-        const tripData = {
+        const tripData: z.infer<typeof TripPreferenceSchema> = {
           title: searchParams.get('destination') || 'New Trip',
           startDate: searchParams.get('startDate')
             ? new Date(searchParams.get('startDate')!)
@@ -66,6 +68,7 @@ export default function ConfirmationPage() {
             hasPets: searchParams.get('hasPets') === 'true',
             hasChildren: searchParams.get('hasChildren') === 'true',
             interests: searchParams.get('interests')?.split(',') || [],
+            destination: searchParams.get('destination') || '',
           },
         };
 

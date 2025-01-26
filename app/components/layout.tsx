@@ -38,7 +38,7 @@ export default async function Layout({
                   Plan
                 </Link>
                 <Link
-                  href="/my-trip"
+                  href="/trip"
                   className="px-4 py-2 text-foreground hover:text-primary transition-colors rounded-md hover:bg-accent"
                 >
                   My Trip

@@ -66,11 +66,15 @@ export async function getUserTrips() {
 export async function getTripWithDetails(tripId: string) {
   try {
     const user = await currentUser();
-    if (!user?.id) return { error: 'Unauthorized' };
+    if (!user || !user.id) return { error: 'Unauthorized' };
 
     const trip = await TripService.getTripWithDetails(tripId);
+
+    console.log('trip', trip);
+
     return { success: 'Trip fetched successfully', data: trip };
   } catch (error) {
+    console.log('error', error);
     return { error: 'Failed to fetch trip' };
   }
 }

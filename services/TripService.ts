@@ -118,14 +118,14 @@ export class TripService {
       // Generate AI suggestions if missing
       const { origin, destination, ...rest } = trip.preferences;
 
-      if (!origin || !destination) {
-        throw new Error('Trip origin and destination are required');
+      if (!destination) {
+        throw new Error('Trip destination is required');
       }
 
       const suggestions = await TripAIService.generateTripSuggestion({
         ...rest,
         origin: origin || undefined,
-        destination: destination || undefined,
+        destination: destination,
       });
 
       if (!suggestions) {

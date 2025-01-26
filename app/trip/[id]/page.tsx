@@ -12,6 +12,7 @@ import { RecommendationsList } from '@/components/trip/RecommendationsList';
 import { FaDatabase, FaRobot, FaMapMarkedAlt } from 'react-icons/fa';
 import { LoadingSteps } from '@/components/loading/LoadingSteps';
 import { getTripWithDetails } from '@/actions/trip';
+import FullPageErrorView from '@/components/error/full-page-error-view';
 
 const loadingSteps = [
   {
@@ -53,7 +54,8 @@ export default function TripPage() {
           const transformedData = transformTripData(result.data);
           setTripData(transformedData);
           setLoadingStep(3);
-          await new Promise((resolve) => setTimeout(resolve, 500));
+        } else {
+          setError('Failed to load trip data');
         }
       } catch (err) {
         setError('Failed to load trip data');
@@ -66,7 +68,7 @@ export default function TripPage() {
   }, [params.id]);
 
   if (error) {
-    return <ErrorView message={error} />;
+    return <FullPageErrorView message={error} />;
   }
 
   if (!tripData || isGeneratingAI) {
@@ -96,23 +98,6 @@ export default function TripPage() {
       </div>
 
       <ChatInterface tripId={params.id as string} />
-    </div>
-  );
-}
-
-function LoadingView({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
-      <p className="text-sky-700 font-medium">{message}</p>
-    </div>
-  );
-}
-
-function ErrorView({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <p className="text-red-500">{message}</p>
     </div>
   );
 }

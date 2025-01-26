@@ -10,7 +10,7 @@ export const TripPreferenceSchema = z.object({
     hasChildren: z.boolean(),
     interests: z.array(z.string()),
     origin: z.string().optional(),
-    destination: z.string().optional(),
+    destination: z.string(),
   }),
 });
 
