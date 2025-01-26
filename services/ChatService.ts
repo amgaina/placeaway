@@ -4,10 +4,7 @@ import { processChatMessage } from '@/actions/ai';
 import { z } from 'zod';
 
 export class ChatService {
-  static async verifyTripOwnership(
-    tripId: string,
-    userId: string,
-  ): Promise<boolean> {
+  async verifyTripOwnership(tripId: string, userId: string): Promise<boolean> {
     const trip = await db.trip.findFirst({
       where: {
         id: tripId,
@@ -17,7 +14,7 @@ export class ChatService {
     return !!trip;
   }
 
-  static async processMessage(tripId: string, message: ChatMessageInput) {
+  async processMessage(tripId: string, message: ChatMessageInput) {
     // Create new chat session if none exists
     const session =
       (await db.chatSession.findFirst({
@@ -64,7 +61,7 @@ export class ChatService {
     };
   }
 
-  static async getChatHistory(tripId: string) {
+  async getChatHistory(tripId: string) {
     return db.chatSession.findMany({
       where: { tripId },
       include: {
@@ -76,9 +73,11 @@ export class ChatService {
     });
   }
 
-  static async deleteChat(sessionId: string) {
+  async deleteChat(sessionId: string) {
     return db.chatSession.delete({
       where: { id: sessionId },
     });
   }
 }
+
+export const chatService = new ChatService();

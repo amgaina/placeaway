@@ -6,8 +6,10 @@ import {
   TripPreferenceSchema,
   TripUpdateSchema,
   BudgetSchema,
+  TripPreferenceInput,
 } from '@/schemas/trip';
 import { currentUser } from '@/lib/auth';
+import TripAIService from '@/services/TripAIService';
 
 export async function createTrip(values: z.infer<typeof TripPreferenceSchema>) {
   try {
@@ -76,5 +78,30 @@ export async function getTripWithDetails(tripId: string) {
   } catch (error) {
     console.log('error', error);
     return { error: 'Failed to fetch trip' };
+  }
+}
+
+export async function generateTripSuggestions(
+  tripId: string,
+  data: z.infer<typeof TripPreferenceSchema>,
+) {
+  try {
+    const user = await currentUser();
+    if (!user || !user.id) return { error: 'Unauthorized' };
+
+    const suggestions = await TripAIService.generateTripSuggestion(
+      data.preferences,
+    );
+    if (!suggestions) {
+      return { error: 'Failed to generate suggestions' };
+    }
+    const updatedTrip = await TripService.updateTripWithAISuggestions(
+      tripId,
+      suggestions,
+    );
+
+    return { success: 'Suggestions generated successfully', data: updatedTrip };
+  } catch (error) {
+    return { error: 'Failed to generate suggestions' };
   }
 }

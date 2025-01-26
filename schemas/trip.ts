@@ -28,15 +28,15 @@ export const BudgetSchema = z.object({
 export const ActivitySchema = z.object({
   title: z.string().min(1),
   description: z.string(),
-  startTime: z.date(),
-  endTime: z.date(),
+  startTime: z.date().optional(),
+  endTime: z.date().optional(),
   location: z.string(),
   cost: z.number(),
 });
 
 export const ItinerarySchema = z.object({
   day: z.number().min(1),
-  date: z.date(),
+  date: z.date().optional(),
   activities: z.array(ActivitySchema),
 });
 
@@ -60,13 +60,7 @@ export const AITripSuggestionSchema = z.object({
     other: z.number(),
   }),
   recommendations: z.array(z.string()),
-  itinerary: z.array(
-    z.object({
-      day: z.number(),
-      activities: z.array(ActivitySchema),
-      date: z.string(),
-    }),
-  ),
+  itinerary: z.array(ItinerarySchema),
 });
 
 export type AITripSuggestion = z.infer<typeof AITripSuggestionSchema>;

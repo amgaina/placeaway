@@ -218,8 +218,8 @@ model Activity {
   itineraryId String
   title       String
   description String?
-  startTime   DateTime
-  endTime     DateTime
+  startTime   DateTime?
+  endTime     DateTime?
   location    String?
   cost        Float?
   

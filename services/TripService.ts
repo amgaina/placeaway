@@ -74,9 +74,14 @@ export class TripService {
     return db.itinerary.create({
       data: {
         ...data,
+        date: data.date || new Date(),
         tripId,
         activities: {
-          create: data.activities,
+          create: data.activities.map((activity) => ({
+            ...activity,
+            startTime: activity.startTime,
+            endTime: activity.endTime,
+          })),
         },
       },
     });
@@ -170,11 +175,11 @@ export class TripService {
                 startTime:
                   typeof activity === 'string'
                     ? new Date()
-                    : new Date(activity.startTime),
+                    : new Date(activity.startTime ?? Date.now()),
                 endTime:
                   typeof activity === 'string'
                     ? new Date()
-                    : new Date(activity.endTime),
+                    : new Date(activity.endTime ?? Date.now()),
                 location: typeof activity === 'string' ? '' : activity.location,
                 cost: typeof activity === 'string' ? 0 : activity.cost,
               })),

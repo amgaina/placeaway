@@ -1,34 +1,40 @@
-'use server';
-
 import { OpenAI } from 'openai';
 import {
   AIMessage,
   AITripSuggestionSchema,
   TripPreferenceInput,
 } from '@/schemas/trip';
+import { z } from 'zod';
 
-class TripAIService {
+export default class TripAIService {
   private static openai = new OpenAI({
     baseURL: 'https://api.deepseek.com',
     apiKey: process.env.DEEPSEEK_API_KEY,
   });
 
+  private static readonly DATE_FORMAT = 'yyyy-MM-dd';
+  private static readonly TIME_FORMAT = 'HH:mm:ss';
+
   private static readonly SYSTEM_PROMPT = `You are an expert travel planning assistant. Generate trip plans in JSON format.
 
-EXAMPLE INPUT:
-Destination: Paris
-Visitors: 2
-Has Children: No
-Has Pets: No
-Interests: Art, Food, History
+NOTES:
+- All dates must be in ISO format (${this.DATE_FORMAT})
+- All times must be in 24-hour format (${this.TIME_FORMAT})
+- All activities must include complete details
+- All costs must be in numbers
 
 EXAMPLE JSON OUTPUT:
 {
   "destination": "Paris",
   "activities": [
-    "Morning visit to the Louvre Museum (9:00 AM - 12:00 PM)",
-    "Afternoon food tour in Montmartre (2:00 PM - 5:00 PM)",
-    "Evening Seine River cruise (7:30 PM - 9:00 PM)"
+    {
+      "title": "Louvre Museum Tour",
+      "description": "Guided tour of key artworks",
+      "startTime": "2024-03-20T09:00:00Z",
+      "endTime": "2024-03-20T12:00:00Z",
+      "location": "Louvre Museum",
+      "cost": 25
+    }
   ],
   "budget": {
     "accommodation": 200,
@@ -38,59 +44,131 @@ EXAMPLE JSON OUTPUT:
     "other": 30
   },
   "recommendations": [
-    "Purchase Paris Museum Pass for better value",
-    "Book Eiffel Tower tickets 3 months in advance",
-    "Best time for photography: early morning"
+    "Purchase Paris Museum Pass for better value"
   ],
   "itinerary": [
     {
       "day": 1,
       "activities": [
-        "Louvre Museum tour",
-        "Seine River cruise"
+        {
+          "title": "Louvre Museum Tour",
+          "description": "Guided tour of key artworks",
+          "startTime": "2024-03-20T09:00:00Z",
+          "endTime": "2024-03-20T12:00:00Z",
+          "location": "Louvre Museum",
+          "cost": 25
+        }
       ],
       "date": "2024-03-20"
     }
   ]
 }`;
 
+  private static readonly TIMEOUT = 60000; // 1 minute
+  private static readonly MAX_RETRIES = 3;
+  private static readonly RETRY_DELAY = 1000; // 1 second
+
+  private static parseDateTime(dateTimeStr: string | null): Date | null {
+    if (!dateTimeStr) return null;
+    try {
+      const date = new Date(dateTimeStr);
+      return isNaN(date.getTime()) ? null : date;
+    } catch {
+      return null;
+    }
+  }
+
+  private static transformAIResponse(
+    response: any,
+  ): z.infer<typeof AITripSuggestionSchema> {
+    const activities = response.activities.map((activity: any) => ({
+      ...activity,
+      startTime: this.parseDateTime(activity.startTime),
+      endTime: this.parseDateTime(activity.endTime),
+    }));
+
+    const itinerary = response.itinerary.map((day: any) => ({
+      ...day,
+      date: this.parseDateTime(day.date),
+      activities: day.activities.map((activity: any) =>
+        typeof activity === 'string'
+          ? {
+              title: activity,
+              description: '',
+              location: '',
+              cost: 0,
+              startTime: null,
+              endTime: null,
+            }
+          : {
+              ...activity,
+              startTime: this.parseDateTime(activity.startTime),
+              endTime: this.parseDateTime(activity.endTime),
+            },
+      ),
+    }));
+
+    return {
+      destination: response.destination,
+      activities,
+      budget: response.budget,
+      recommendations: response.recommendations,
+      itinerary,
+    };
+  }
+
   static async generateTripSuggestion(
     preferences: TripPreferenceInput['preferences'],
   ) {
-    const maxRetries = 3;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.TIMEOUT);
     let retries = 0;
 
-    while (retries < maxRetries) {
+    while (retries < this.MAX_RETRIES) {
       try {
-        const completion = await this.openai.chat.completions.create({
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: this.SYSTEM_PROMPT },
-            {
-              role: 'user',
-              content: `Generate a comprehensive trip plan in JSON format for:
+        const completion = await this.openai.chat.completions.create(
+          {
+            model: 'deepseek-chat',
+            messages: [
+              { role: 'system', content: this.SYSTEM_PROMPT },
+              {
+                role: 'user',
+                content: `Generate a comprehensive trip plan in JSON format for:
 Destination: ${preferences.destination || 'to be suggested'}
 Visitors: ${preferences.visitorCount}
 Has Children: ${preferences.hasChildren ? 'Yes' : 'No'}
 Has Pets: ${preferences.hasPets ? 'Yes' : 'No'}
 Interests: ${preferences.interests.join(', ')}
 ${preferences.origin ? `Starting from: ${preferences.origin}` : ''}`,
-            },
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.7,
-          max_tokens: 4000,
-        });
+              },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.7,
+            max_tokens: 4000,
+          },
+          {
+            signal: controller.signal,
+          },
+        );
 
+        clearTimeout(timeoutId);
         const content = completion.choices[0].message.content;
         if (!content) throw new Error('Empty response from AI');
 
         const suggestion = JSON.parse(content);
-        return AITripSuggestionSchema.parse(suggestion);
+        console.log('Generated trip suggestion:', suggestion);
+        const transformed = this.transformAIResponse(suggestion);
+        return AITripSuggestionSchema.parse(transformed);
       } catch (error) {
+        console.error('Failed to generate trip suggestion:', error);
         retries++;
-        if (retries === maxRetries) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('AI generation timed out. Please try again.');
+        }
+        if (retries === this.MAX_RETRIES) throw error;
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.RETRY_DELAY * Math.pow(2, retries)),
+        );
       }
     }
   }
@@ -116,5 +194,3 @@ ${preferences.origin ? `Starting from: ${preferences.origin}` : ''}`,
     return completion.choices[0].message.content || '';
   }
 }
-
-export default TripAIService;

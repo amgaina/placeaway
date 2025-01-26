@@ -2,7 +2,7 @@
 
 import { JSX, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createTrip } from '@/actions/trip';
+import { createTrip, generateTripSuggestions } from '@/actions/trip';
 import { generateTripSuggestion } from '@/actions/ai';
 import { motion } from 'framer-motion';
 import {
@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { TripPreferenceSchema } from '@/schemas/trip';
+import FullPageErrorView from '@/components/error/full-page-error-view';
 
 type Step = {
   id: number;
@@ -73,11 +74,15 @@ export default function ConfirmationPage() {
         };
 
         const tripResult = await createTrip(tripData);
-        if (tripResult.error) throw new Error(tripResult.error);
+        if (tripResult.error || !tripResult.data?.id)
+          throw new Error(tripResult.error);
 
         // Step 2: Generate AI Suggestions
         setCurrentStep(2);
-        const aiResult = await generateTripSuggestion(tripData);
+        const aiResult = await generateTripSuggestions(
+          tripResult.data?.id,
+          tripData,
+        );
         if (aiResult.error) throw new Error(aiResult.error);
 
         // Step 3: Prepare Redirect
@@ -95,7 +100,7 @@ export default function ConfirmationPage() {
   }, []);
 
   if (error) {
-    return <ErrorView error={error} />;
+    <FullPageErrorView message={error} />;
   }
 
   return (
@@ -144,25 +149,6 @@ export default function ConfirmationPage() {
             </motion.div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ErrorView({ error }: { error: string }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-red-500 mb-4">
-          Something went wrong
-        </h2>
-        <p className="text-slate-600">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-sky-500 text-white rounded hover:bg-sky-600"
-        >
-          Try Again
-        </button>
       </div>
     </div>
   );

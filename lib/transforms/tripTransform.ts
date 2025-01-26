@@ -14,8 +14,8 @@ export function transformTripData(
     activities: trip.itineraries.flatMap((i) =>
       i.activities.map((a) => ({
         title: a.title,
-        startTime: a.startTime,
-        endTime: a.endTime,
+        startTime: a.startTime || undefined,
+        endTime: a.endTime || undefined,
         description: a.description ?? '',
         location: a.location ?? '',
         cost: a.cost ?? 0,
@@ -35,8 +35,8 @@ export function transformTripData(
       day: i.day,
       activities: i.activities.map((a) => ({
         title: a.title,
-        startTime: a.startTime,
-        endTime: a.endTime,
+        startTime: a.startTime || undefined,
+        endTime: a.endTime || undefined,
         description: a.description ?? '',
         location: a.location ?? '',
         cost: a.cost ?? 0,

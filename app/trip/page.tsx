@@ -205,7 +205,7 @@ export default function TripsPage() {
               asChild
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <Link href="/booking">
+              <Link href="/plan">
                 <Plus className="w-4 h-4 mr-2" />
                 New Trip
               </Link>
@@ -300,7 +300,7 @@ function EmptyState({ query }: { query: string }) {
             ? `No trips found for "${query}"`
             : 'Start planning your next adventure!'}
         </p>
-        <Link href="/booking" className="bg-primary">
+        <Link href="/plan" className="bg-primary">
           Plan Your First Trip
         </Link>
       </div>
