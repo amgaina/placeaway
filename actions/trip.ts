@@ -56,8 +56,12 @@ export async function updateTripBudget(
 export async function getLatLangFromAddress(address: string) {
   try {
     const response = await TripAIService.getCoordinates(address);
-    console.log('locaitons', response);
+    if (!response) {
+      return { error: 'Failed to fetch coordinates' };
+    }
+    return { success: 'Coordinates fetched successfully', data: response };
   } catch (error) {
+    console.error('Failed to fetch coordinates', error);
     return { error: 'Failed to fetch coordinates' };
   }
 }
@@ -66,9 +70,9 @@ export async function getUserTrips() {
   try {
     const user = await currentUser();
     if (!user?.id) return { error: 'Unauthorized' };
-
-    getLatLangFromAddress('New York');
-
+    console.log('user', user);
+    const res = await getLatLangFromAddress('New York');
+    console.log('lcoaiton api', res);
     const trips = await TripService.getUserTrips(user.id);
     return { success: 'Trips fetched successfully', data: trips };
   } catch (error) {
@@ -101,6 +105,8 @@ export async function generateTripSuggestions(
     const suggestions = await TripAIService.generateTripSuggestion(
       data.preferences,
     );
+
+    console.log('suggestions', suggestions);
     if (!suggestions) {
       return { error: 'Failed to generate suggestions' };
     }

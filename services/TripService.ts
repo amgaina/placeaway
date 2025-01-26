@@ -213,6 +213,8 @@ export class TripService {
             startTime: activity.startTime,
             endTime: activity.endTime,
             location: activity.location,
+            lat: activity.lat,
+            lng: activity.lng,
             cost: activity.cost,
           })),
         });

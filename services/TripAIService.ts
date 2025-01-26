@@ -134,6 +134,8 @@ EXAMPLE JSON OUTPUT:
       }),
     );
 
+    console.log(activitiesWithCoordinates);
+
     // Transform itinerary activities with coordinates
     const itineraryWithCoordinates = await Promise.all(
       response.itinerary.map(async (day: any) => ({

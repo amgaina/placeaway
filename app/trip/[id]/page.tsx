@@ -67,9 +67,20 @@ export default function TripDetailsPage() {
 
         if (result && 'data' in result && result.data) {
           setLoadingStep(2);
+          console.log(result.data);
           setIsGeneratingAI(true);
           // const transformedData = transformTripData(result.data);
           setTripData(result.data);
+          setSelectedPlace({
+            location: {
+              lat:
+                result.data.itineraries?.[0]?.activities?.[0]?.lat ??
+                defaultCenter.lat,
+              lng:
+                result.data.itineraries?.[0]?.activities?.[0]?.lng ??
+                defaultCenter.lng,
+            },
+          });
           setLoadingStep(3);
         } else {
           setError('Failed to load trip data');

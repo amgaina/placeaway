@@ -38,6 +38,8 @@ export const ActivitySchema = z.object({
   startTime: z.date().optional(),
   endTime: z.date().optional(),
   location: z.string(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   cost: z.number(),
 });
 

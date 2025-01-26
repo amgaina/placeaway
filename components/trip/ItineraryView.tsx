@@ -1,15 +1,20 @@
 import { Badge } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { format } from 'date-fns';
-import { Activity } from '@prisma/client';
-import { useLoadScript } from '@react-google-maps/api';
+import { Activity, Itinerary } from '@prisma/client';
 import { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
+import { getLatLangFromAddress } from '@/actions/trip';
+import { toast } from 'sonner';
 
 interface Location {
   lat: number;
   lng: number;
+}
+
+interface IttineraryWithLocationAndActivity extends Itinerary {
+  activities: ActivityWithLocation[];
 }
 
 interface ActivityWithLocation extends Activity {
@@ -17,7 +22,7 @@ interface ActivityWithLocation extends Activity {
 }
 
 interface ItineraryViewProps {
-  itinerary: any[];
+  itinerary: IttineraryWithLocationAndActivity[];
   onPlaceSelect?: (place: {
     location: Location;
     details: ActivityWithLocation;
@@ -31,46 +36,24 @@ export function ItineraryView({
   const [activities, setActivities] = useState<ActivityWithLocation[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: ['places'],
-  });
+  const getCoordinates = async (location: string) => {
+    try {
+      const response = await getLatLangFromAddress(location);
 
-  useEffect(() => {
-    async function getCoordinates() {
-      if (!isLoaded) return;
-
-      const geocoder = new google.maps.Geocoder();
-      const activitiesWithCoordinates = await Promise.all(
-        itinerary.flatMap((day) =>
-          day.activities.map(async (activity: Activity) => {
-            try {
-              const result = await geocoder.geocode({
-                address: activity.location,
-              });
-
-              const coordinates = result.results[0]?.geometry.location
-                ? {
-                    lat: result.results[0].geometry.location.lat(),
-                    lng: result.results[0].geometry.location.lng(),
-                  }
-                : undefined;
-
-              return { ...activity, coordinates };
-            } catch (error) {
-              console.error(`Failed to geocode ${activity.location}:`, error);
-              return activity;
-            }
-          }),
-        ),
-      );
-
-      setActivities(activitiesWithCoordinates);
-      setIsLoadingLocations(false);
+      if (response.error) {
+        toast.error(response.error);
+      } else if (response.data) {
+        return {
+          lat: response.data.lat,
+          lng: response.data.lng,
+        };
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
     }
 
-    getCoordinates();
-  }, [itinerary, isLoaded]);
+    return null;
+  };
 
   return (
     <Card>
@@ -94,13 +77,28 @@ export function ItineraryView({
                     <div
                       key={idx}
                       className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() =>
-                        activityWithLocation?.coordinates &&
-                        onPlaceSelect?.({
-                          location: activityWithLocation.coordinates,
-                          details: activityWithLocation,
-                        })
-                      }
+                      onClick={() => {
+                        if (!activity.location) return;
+
+                        if (activity.lat && activity.lng) {
+                          onPlaceSelect?.({
+                            location: { lat: activity.lat, lng: activity.lng },
+                            details: activity,
+                          });
+                          return;
+                        }
+
+                        getCoordinates(activity.location).then(
+                          (coordinates) => {
+                            if (coordinates) {
+                              onPlaceSelect?.({
+                                location: coordinates,
+                                details: { ...activity, coordinates },
+                              });
+                            }
+                          },
+                        );
+                      }}
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -108,7 +106,7 @@ export function ItineraryView({
                             {activity.title}
                             {isLoadingLocations ? (
                               <Skeleton className="h-4 w-4 rounded-full" />
-                            ) : activityWithLocation?.coordinates ? (
+                            ) : activity.location ? (
                               <MapPin className="w-4 h-4 text-primary" />
                             ) : null}
                           </h4>
