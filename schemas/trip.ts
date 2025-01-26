@@ -1,3 +1,4 @@
+import { Budget, Trip } from '@prisma/client';
 import { z } from 'zod';
 
 export const TripPreferenceSchema = z.object({
@@ -49,6 +50,29 @@ export interface AIMessage {
   content: string;
 }
 
+export enum RecommendationCategory {
+  TRANSPORT = 'TRANSPORT',
+  ACCOMMODATION = 'ACCOMMODATION',
+  FOOD = 'FOOD',
+  ACTIVITIES = 'ACTIVITIES',
+  SAFETY = 'SAFETY',
+  GENERAL = 'GENERAL',
+  OTHER = 'OTHER',
+}
+
+export enum RecommendationPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+export const RecommendationSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  category: z.nativeEnum(RecommendationCategory),
+  priority: z.nativeEnum(RecommendationPriority),
+});
+
 export const AITripSuggestionSchema = z.object({
   destination: z.string(),
   activities: z.array(ActivitySchema),
@@ -59,7 +83,7 @@ export const AITripSuggestionSchema = z.object({
     food: z.number(),
     other: z.number(),
   }),
-  recommendations: z.array(z.string()),
+  recommendations: z.array(RecommendationSchema),
   itinerary: z.array(ItinerarySchema),
 });
 
@@ -71,3 +95,17 @@ export const ChatMessageSchema = z.object({
 });
 
 export type ChatMessageInput = z.infer<typeof ChatMessageSchema>;
+
+export interface TripWithPreferencesAndBudget extends Trip {
+  preferences: {
+    visitorCount: number;
+    hasPets: boolean;
+    hasChildren: boolean;
+    interests: string[];
+    origin: string | null;
+    destination: string | null;
+    id: string;
+    tripId: string;
+  } | null;
+  budget: Budget | null;
+}

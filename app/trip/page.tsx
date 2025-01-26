@@ -26,24 +26,44 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-
-type Trip = {
-  id: string;
-  title: string;
-  status: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  preferences: {
-    destination: string;
-    visitorCount: number;
-  };
-};
+import { Trip } from '@prisma/client';
+import { TripWithPreferencesAndBudget } from '@/schemas/trip';
+import FullPageErrorView from '@/components/error/full-page-error-view';
 
 type ViewMode = 'grid' | 'list';
 type FilterStatus = 'all' | 'planning' | 'completed';
 
+/**
+ * TripsPage Component
+ *
+ * A comprehensive page component for displaying and managing user trips.
+ *
+ * Features:
+ * - Displays trips in both grid and list view modes
+ * - Provides trip filtering by status (all/planning/completed)
+ * - Implements search functionality for trips by destination
+ * - Shows trip statistics (total, planning, completed)
+ * - Handles loading and error states
+ *
+ * State Management:
+ * - trips: Array of user trips with preferences and budget information
+ * - loading: Boolean indicating data fetch status
+ * - error: String containing error message if any
+ * - searchQuery: String for filtering trips by destination
+ * - filterStatus: Current filter status ('all' | 'planning' | 'completed')
+ * - viewMode: Current view mode ('grid' | 'list')
+ *
+ * Data Flow:
+ * 1. Loads trips data on component mount
+ * 2. Transforms raw trip data to include preferences
+ * 3. Filters trips based on search query and status
+ * 4. Sorts trips by start date (descending)
+ *
+ * @returns {JSX.Element} Rendered trips page with filtering, searching, and view options
+ * @throws {Error} When trip data fetching fails
+ */
 export default function TripsPage() {
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [trips, setTrips] = useState<TripWithPreferencesAndBudget[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,20 +73,36 @@ export default function TripsPage() {
 
   useEffect(() => {
     async function loadTrips() {
-      const result = await getUserTrips();
-      if (result.error) {
-        setError(result.error);
-      } else {
-        const transformedTrips = (result.data || []).map((trip) => ({
-          ...trip,
-          preferences: {
-            destination: trip.title || '',
-            visitorCount: 1,
-          },
-        }));
-        setTrips(transformedTrips);
+      try {
+        const result = await getUserTrips();
+        if (result.error) {
+          setError(result.error);
+        } else {
+          setTrips(
+            result.data?.map((trip) => ({
+              ...trip,
+              preferences: {
+                destination: trip.preferences?.destination ?? null,
+                visitorCount: trip.preferences?.visitorCount ?? 1,
+                interests: trip.preferences?.interests ?? [],
+                hasChildren: trip.preferences?.hasChildren ?? false,
+                hasPets: trip.preferences?.hasPets ?? false,
+                origin: trip.preferences?.origin ?? null,
+                id: trip.preferences?.id ?? trip.id,
+                tripId: trip.preferences?.tripId ?? trip.id,
+              },
+              status: trip.status ?? 'PLANNING',
+              startDate: trip.startDate ? new Date(trip.startDate) : null,
+              endDate: trip.endDate ? new Date(trip.endDate) : null,
+            })) ?? [],
+          );
+        }
+      } catch (err) {
+        setError('Failed to load trips');
+        console.error('Trip loading error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     loadTrips();
@@ -74,40 +110,40 @@ export default function TripsPage() {
 
   const filteredTrips = trips
     .filter((trip) => {
+      // Status filter
       if (
         filterStatus !== 'all' &&
-        trip.status.toLowerCase() !== filterStatus
+        (trip?.status?.toLowerCase() ?? 'planning') !== filterStatus
       ) {
         return false;
       }
+
+      // Search filter
       if (searchQuery) {
-        return trip.preferences.destination
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+        const destination = trip?.preferences?.destination ?? '';
+        return destination.toLowerCase().includes(searchQuery.toLowerCase());
       }
+
       return true;
     })
     .sort((a, b) => {
-      if (!a.startDate || !b.startDate) return 0;
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      const dateA = a?.startDate ? new Date(a.startDate).getTime() : 0;
+      const dateB = b?.startDate ? new Date(b.startDate).getTime() : 0;
+      return dateB - dateA || 0;
     });
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <FaSpinner className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-primary font-medium">Loading your trips...</p>
-        </div>
-      </div>
-    );
+    return <LoadingView />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-destructive">{error}</p>
-      </div>
+      <FullPageErrorView
+        message={error}
+        title="Error"
+        onAction={() => window.location.reload()}
+        actionText="Try Again"
+      />
     );
   }
 
@@ -242,7 +278,7 @@ export default function TripsPage() {
                   <CardHeader className="border-b bg-primary/5">
                     <CardTitle className="flex items-center justify-between">
                       <span className="text-primary">
-                        {trip.preferences.destination}
+                        {trip.preferences?.destination ?? 'Unknown Destination'}
                       </span>
                       <Badge
                         variant={
@@ -258,7 +294,7 @@ export default function TripsPage() {
                       <div className="flex items-center gap-2">
                         <GroupIcon className="w-4 h-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {trip.preferences.visitorCount} Visitors
+                          {trip.preferences?.visitorCount ?? 0} Visitors
                         </span>
                       </div>
                       {trip.startDate && (
@@ -270,7 +306,27 @@ export default function TripsPage() {
                           </span>
                         </div>
                       )}
-                      <div className="pt-4 flex justify-end">
+                      <div className="border-t pt-4">
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm font-medium">Trip Details:</p>
+                          <ul className="text-sm text-muted-foreground">
+                            <li>ID: {trip.id}</li>
+                            <li>Title: {trip.title}</li>
+                            <li>Status: {trip.status}</li>
+                            <li>
+                              Destination:{' '}
+                              {trip.preferences?.destination ??
+                                'No destination set'}
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="pt-4 flex items-center justify-between">
+                        <Badge variant="outline" className="bg-primary/5">
+                          {trip.hasAISuggestions
+                            ? 'AI Enhanced'
+                            : 'AI Planning in Progress'}
+                        </Badge>
                         <Button variant="ghost" className="text-primary">
                           View Details →
                         </Button>
@@ -282,6 +338,17 @@ export default function TripsPage() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function LoadingView() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-4">
+        <FaSpinner className="w-8 h-8 text-primary animate-spin" />
+        <p className="text-primary font-medium">Loading your trips...</p>
       </div>
     </div>
   );

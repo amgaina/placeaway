@@ -22,6 +22,7 @@ NOTES:
 - All times must be in 24-hour format (${this.TIME_FORMAT})
 - All activities must include complete details
 - All costs must be in numbers
+- Recommendations must include category and priority
 
 EXAMPLE JSON OUTPUT:
 {
@@ -44,7 +45,18 @@ EXAMPLE JSON OUTPUT:
     "other": 30
   },
   "recommendations": [
-    "Purchase Paris Museum Pass for better value"
+    {
+      "title": "Purchase Paris Museum Pass",
+      "description": "Save money on multiple museum visits with the Paris Museum Pass",
+      "category": "ACTIVITIES",
+      "priority": "HIGH"
+    },
+    {
+      "title": "Book Accommodation in Le Marais",
+      "description": "Central location with easy access to major attractions",
+      "category": "ACCOMMODATION",
+      "priority": "MEDIUM"
+    }
   ],
   "itinerary": [
     {
@@ -112,7 +124,12 @@ EXAMPLE JSON OUTPUT:
       destination: response.destination,
       activities,
       budget: response.budget,
-      recommendations: response.recommendations,
+      recommendations: response.recommendations.map((rec: any) => ({
+        title: rec.title || '',
+        description: rec.description || '',
+        category: rec.category || 'GENERAL',
+        priority: rec.priority || 'MEDIUM',
+      })),
       itinerary,
     };
   }

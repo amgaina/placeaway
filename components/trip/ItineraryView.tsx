@@ -34,6 +34,15 @@ export function ItineraryView({
               </div>
             ))}
           </TabsContent>
+          <TabsContent value="activities" className="p-4 space-y-3">
+            <ul className="list-disc list-inside">
+              {itinerary
+                .flatMap((day) => day.activities)
+                .map((activity, i) => (
+                  <li key={i}>{activity.title}</li>
+                ))}
+            </ul>
+          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>

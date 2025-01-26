@@ -72,8 +72,6 @@ export async function getTripWithDetails(tripId: string) {
 
     const trip = await TripService.getTripWithDetails(tripId);
 
-    console.log('trip', trip);
-
     return { success: 'Trip fetched successfully', data: trip };
   } catch (error) {
     console.log('error', error);
