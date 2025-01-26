@@ -17,6 +17,7 @@ const categoryColors = {
   ACTIVITIES: 'bg-green-100 text-green-800',
   SAFETY: 'bg-red-100 text-red-800',
   GENERAL: 'bg-gray-100 text-gray-800',
+  OTHER: 'bg-gray-100 text-gray-800',
 };
 
 const priorityIcons = {
@@ -30,6 +31,7 @@ export function RecommendationsList({
 }: {
   recommendations: Recommendation[];
 }) {
+  console.log(recommendations);
   return (
     <Card className="bg-white shadow-md">
       <CardHeader className="p-4 bg-sky-100">

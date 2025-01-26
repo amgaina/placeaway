@@ -1,5 +1,15 @@
-import { Trip, Budget, Itinerary, Activity } from '@prisma/client';
-import { AITripSuggestion } from '@/schemas/trip';
+import {
+  Trip,
+  Budget,
+  Itinerary,
+  Activity,
+  TripRecommendation,
+} from '@prisma/client';
+import {
+  AITripSuggestion,
+  RecommendationCategory,
+  RecommendationPriority,
+} from '@/schemas/trip';
 
 export function transformTripData(
   trip: Trip & {
@@ -7,6 +17,7 @@ export function transformTripData(
     preferences: { destination: string | null } | null;
     itineraries: (Itinerary & { activities: Activity[] })[];
     chatSessions: any[];
+    recommendations: TripRecommendation[];
   },
 ): AITripSuggestion {
   return {
@@ -28,9 +39,12 @@ export function transformTripData(
       food: trip.budget?.food || 0,
       other: trip.budget?.other || 0,
     },
-    recommendations: trip.chatSessions
-      .filter((s) => s.messages?.[0]?.role === 'assistant')
-      .map((s) => s.messages[0].content),
+    recommendations: trip.recommendations.map((rec) => ({
+      title: rec.title || '',
+      description: rec.description || '',
+      category: (rec.category || 'GENERAL') as RecommendationCategory,
+      priority: (rec.priority || 'MEDIUM') as RecommendationPriority,
+    })),
     itinerary: trip.itineraries.map((i) => ({
       day: i.day,
       activities: i.activities.map((a) => ({

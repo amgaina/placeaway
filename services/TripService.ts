@@ -111,6 +111,7 @@ export class TripService {
             activities: true,
           },
         },
+        recommendations: true,
         chatSessions: {
           include: {
             messages: true,
@@ -152,44 +153,78 @@ export class TripService {
     tripId: string,
     suggestions: AITripSuggestion,
   ) {
-    return db.trip.update({
-      where: { id: tripId },
-      data: {
-        hasAISuggestions: true,
-        aiGeneratedAt: new Date(),
-        budget: {
-          create: {
-            ...suggestions.budget,
-            total: Object.values(suggestions.budget).reduce(
-              (sum, value) => sum + value,
-              0,
-            ),
+    return db.$transaction(async (tx) => {
+      // Update trip status
+      await tx.trip.update({
+        where: { id: tripId },
+        data: {
+          hasAISuggestions: true,
+          aiGeneratedAt: new Date(),
+        },
+      });
+
+      // Create recommendations
+      await tx.tripRecommendation.createMany({
+        data: suggestions.recommendations.map((rec) => ({
+          tripId,
+          title: rec.title,
+          description: rec.description,
+          category: rec.category,
+          priority: rec.priority,
+          status: 'PENDING',
+        })),
+      });
+
+      // Create budget
+      await tx.budget.upsert({
+        where: { tripId },
+        create: {
+          tripId,
+          total: Object.values(suggestions.budget).reduce((a, b) => a + b, 0),
+          ...suggestions.budget,
+        },
+        update: {
+          total: Object.values(suggestions.budget).reduce((a, b) => a + b, 0),
+          ...suggestions.budget,
+        },
+      });
+
+      // Create itineraries with activities
+      for (const day of suggestions.itinerary) {
+        const itinerary = await tx.itinerary.create({
+          data: {
+            tripId,
+            day: day.day,
+            date: day.date || new Date(),
+          },
+        });
+
+        await tx.activity.createMany({
+          data: day.activities.map((activity) => ({
+            itineraryId: itinerary.id,
+            title: activity.title,
+            description: activity.description,
+            startTime: activity.startTime,
+            endTime: activity.endTime,
+            location: activity.location,
+            cost: activity.cost,
+          })),
+        });
+      }
+
+      return tx.trip.findUnique({
+        where: { id: tripId },
+        include: {
+          preferences: true,
+          budget: true,
+          recommendations: true,
+          itineraries: {
+            include: {
+              activities: true,
+            },
           },
         },
-        itineraries: {
-          create: suggestions.itinerary.map((day) => ({
-            day: day.day,
-            date: day.date ? new Date(day.date) : new Date(),
-            activities: {
-              create: day.activities.map((activity) => ({
-                title: typeof activity === 'string' ? activity : activity.title,
-                description:
-                  typeof activity === 'string' ? '' : activity.description,
-                startTime:
-                  typeof activity === 'string'
-                    ? new Date()
-                    : new Date(activity.startTime ?? Date.now()),
-                endTime:
-                  typeof activity === 'string'
-                    ? new Date()
-                    : new Date(activity.endTime ?? Date.now()),
-                location: typeof activity === 'string' ? '' : activity.location,
-                cost: typeof activity === 'string' ? 0 : activity.cost,
-              })),
-            },
-          })),
-        },
-      },
+      });
     });
   }
 

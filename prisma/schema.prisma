@@ -236,6 +236,7 @@ enum RecommendationCategory {
   ACTIVITIES
   SAFETY
   GENERAL
+  OTHER
 }
 
 enum RecommendationPriority {

@@ -49,6 +49,7 @@ export default function TripPage() {
         const result = await getTripWithDetails(params.id as string);
 
         if (result && 'data' in result && result.data) {
+          console.log(result.data.recommendations);
           setLoadingStep(2);
           setIsGeneratingAI(true);
           const transformedData = transformTripData(result.data);
