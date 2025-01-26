@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { TripWithPreferencesAndBudgetAndTripRecommendation } from '@/schemas/trip';
-import { transformTripData } from '@/lib/transforms/tripTransform';
 import { TravelOverview } from '@/components/trip/TravelOverview';
 import { BudgetTracker } from '@/components/trip/BudgetTracker';
 import { ItineraryView } from '@/components/trip/ItineraryView';
@@ -67,7 +66,6 @@ export default function TripDetailsPage() {
         const result = await getTripWithDetails(params.id as string);
 
         if (result && 'data' in result && result.data) {
-          // console.log(result.data.recommendations);
           setLoadingStep(2);
           setIsGeneratingAI(true);
           // const transformedData = transformTripData(result.data);
@@ -171,9 +169,19 @@ export default function TripDetailsPage() {
                     day.activities.map((activity) => (
                       <Marker
                         key={activity.id}
-                        // position={activity.location ?? defaultCenter}
-                        // onClick={() => setSelectedPlace(activity)}
-                        position={defaultCenter}
+                        position={
+                          activity.lat && activity.lng
+                            ? { lat: activity.lat, lng: activity.lng }
+                            : defaultCenter
+                        }
+                        onClick={() =>
+                          setSelectedPlace({
+                            location: {
+                              lat: activity?.lat ?? defaultCenter.lat,
+                              lng: activity?.lng ?? defaultCenter.lng,
+                            },
+                          })
+                        }
                       />
                     )),
                   )}

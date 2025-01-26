@@ -222,12 +222,16 @@ model Activity {
   startTime   DateTime?
   endTime     DateTime?
   location    String?
-  cost        Float?
+  lat         Float?
+  lng         Float?
+  cost        Float? 
   
   itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
 
   @@map("activities")
 }
+
+
 
 enum RecommendationCategory {
   TRANSPORT

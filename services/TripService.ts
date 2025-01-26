@@ -5,7 +5,7 @@ import {
   BudgetInput,
   ItineraryInput,
   AITripSuggestion,
-  TripWithPreferencesAndBudget,
+  TripWithPreferencesAndBudgetAndTripRecommendation,
 } from '@/schemas/trip';
 import TripAIService from './TripAIService';
 
@@ -46,12 +46,18 @@ export class TripService {
 
   static async getUserTrips(
     userId: string,
-  ): Promise<TripWithPreferencesAndBudget[]> {
+  ): Promise<TripWithPreferencesAndBudgetAndTripRecommendation[]> {
     return db.trip.findMany({
       where: { userId },
       include: {
         preferences: true,
         budget: true,
+        recommendations: true,
+        itineraries: {
+          include: {
+            activities: true,
+          },
+        },
       },
     });
   }

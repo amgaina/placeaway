@@ -5,6 +5,7 @@ import {
   TripPreferenceInput,
 } from '@/schemas/trip';
 import { z } from 'zod';
+import { Client } from '@googlemaps/google-maps-services-js';
 
 export default class TripAIService {
   private static openai = new OpenAI({
@@ -80,6 +81,30 @@ EXAMPLE JSON OUTPUT:
   private static readonly MAX_RETRIES = 3;
   private static readonly RETRY_DELAY = 1000; // 1 second
 
+  private static geocoder = new Client({});
+
+  public static async getCoordinates(location: string) {
+    try {
+      const response = await this.geocoder.geocode({
+        params: {
+          address: location,
+          key: process.env.GOOGLE_MAPS_API_KEY!,
+        },
+      });
+
+      if (response.data.results[0]) {
+        return {
+          lat: response.data.results[0].geometry.location.lat,
+          lng: response.data.results[0].geometry.location.lng,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
+    }
+  }
+
   private static parseDateTime(dateTimeStr: string | null): Date | null {
     if (!dateTimeStr) return null;
     try {
@@ -90,39 +115,64 @@ EXAMPLE JSON OUTPUT:
     }
   }
 
-  private static transformAIResponse(
+  private static async transformAIResponse(
     response: any,
-  ): z.infer<typeof AITripSuggestionSchema> {
-    const activities = response.activities.map((activity: any) => ({
-      ...activity,
-      startTime: this.parseDateTime(activity.startTime),
-      endTime: this.parseDateTime(activity.endTime),
-    }));
+  ): Promise<z.infer<typeof AITripSuggestionSchema>> {
+    // Transform activities with coordinates
+    const activitiesWithCoordinates = await Promise.all(
+      response.activities.map(async (activity: any) => {
+        const coordinates = activity.location
+          ? await this.getCoordinates(activity.location)
+          : null;
+        return {
+          ...activity,
+          lat: coordinates?.lat || null,
+          lng: coordinates?.lng || null,
+          startTime: this.parseDateTime(activity.startTime),
+          endTime: this.parseDateTime(activity.endTime),
+        };
+      }),
+    );
 
-    const itinerary = response.itinerary.map((day: any) => ({
-      ...day,
-      date: this.parseDateTime(day.date),
-      activities: day.activities.map((activity: any) =>
-        typeof activity === 'string'
-          ? {
-              title: activity,
-              description: '',
-              location: '',
-              cost: 0,
-              startTime: null,
-              endTime: null,
+    // Transform itinerary activities with coordinates
+    const itineraryWithCoordinates = await Promise.all(
+      response.itinerary.map(async (day: any) => ({
+        ...day,
+        date: this.parseDateTime(day.date),
+        activities: await Promise.all(
+          day.activities.map(async (activity: any) => {
+            if (typeof activity === 'string') {
+              return {
+                title: activity,
+                description: '',
+                location: '',
+                cost: 0,
+                startTime: null,
+                endTime: null,
+                lat: null,
+                lng: null,
+              };
             }
-          : {
+
+            const coordinates = activity.location
+              ? await this.getCoordinates(activity.location)
+              : null;
+
+            return {
               ...activity,
+              lat: coordinates?.lat || null,
+              lng: coordinates?.lng || null,
               startTime: this.parseDateTime(activity.startTime),
               endTime: this.parseDateTime(activity.endTime),
-            },
-      ),
-    }));
+            };
+          }),
+        ),
+      })),
+    );
 
     return {
       destination: response.destination,
-      activities,
+      activities: activitiesWithCoordinates,
       budget: response.budget,
       recommendations: response.recommendations.map((rec: any) => ({
         title: rec.title || '',
@@ -130,7 +180,7 @@ EXAMPLE JSON OUTPUT:
         category: rec.category || 'GENERAL',
         priority: rec.priority || 'MEDIUM',
       })),
-      itinerary,
+      itinerary: itineraryWithCoordinates,
     };
   }
 
@@ -173,8 +223,7 @@ ${preferences.origin ? `Starting from: ${preferences.origin}` : ''}`,
         if (!content) throw new Error('Empty response from AI');
 
         const suggestion = JSON.parse(content);
-        console.log('Generated trip suggestion:', suggestion);
-        const transformed = this.transformAIResponse(suggestion);
+        const transformed = await this.transformAIResponse(suggestion);
         return AITripSuggestionSchema.parse(transformed);
       } catch (error) {
         console.error('Failed to generate trip suggestion:', error);

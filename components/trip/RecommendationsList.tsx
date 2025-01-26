@@ -25,7 +25,6 @@ export function RecommendationsList({
 }: {
   recommendations: TripRecommendation[];
 }) {
-  console.log(recommendations);
   return (
     <Card className="bg-white shadow-md">
       <CardHeader className="p-4 bg-sky-100">
