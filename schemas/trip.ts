@@ -14,7 +14,35 @@ export const TripPreferenceSchema = z.object({
   }),
 });
 
+export const TripUpdateSchema = TripPreferenceSchema.partial();
+
+export const BudgetSchema = z.object({
+  total: z.number().min(0),
+  accommodation: z.number().min(0),
+  transport: z.number().min(0),
+  activities: z.number().min(0),
+  food: z.number().min(0),
+  other: z.number().min(0),
+});
+
+export const ActivitySchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  startTime: z.date(),
+  endTime: z.date(),
+  location: z.string().optional(),
+  cost: z.number().optional(),
+});
+
+export const ItinerarySchema = z.object({
+  day: z.number().min(1),
+  date: z.date(),
+  activities: z.array(ActivitySchema),
+});
+
 export type TripPreferenceInput = z.infer<typeof TripPreferenceSchema>;
+export type BudgetInput = z.infer<typeof BudgetSchema>;
+export type ItineraryInput = z.infer<typeof ItinerarySchema>;
 
 export interface AIMessage {
   role: 'user' | 'assistant';

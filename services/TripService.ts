@@ -1,6 +1,10 @@
-import { Trip, TripStatus } from '@prisma/client';
+import { Trip, TripStatus, Budget, Itinerary } from '@prisma/client';
 import { db } from '@/lib/db';
-import { TripPreferenceInput } from '@/schemas/trip';
+import {
+  TripPreferenceInput,
+  BudgetInput,
+  ItineraryInput,
+} from '@/schemas/trip';
 
 export class TripService {
   static async createTrip(
@@ -44,6 +48,71 @@ export class TripService {
         preferences: true,
         budget: true,
       },
+    });
+  }
+
+  static async updateBudget(
+    tripId: string,
+    data: BudgetInput,
+  ): Promise<Budget> {
+    return db.budget.upsert({
+      where: { tripId },
+      update: data,
+      create: {
+        ...data,
+        tripId,
+      },
+    });
+  }
+
+  static async addItinerary(
+    tripId: string,
+    data: ItineraryInput,
+  ): Promise<Itinerary> {
+    return db.itinerary.create({
+      data: {
+        ...data,
+        tripId,
+        activities: {
+          create: data.activities,
+        },
+      },
+    });
+  }
+
+  static async updateTripStatus(
+    tripId: string,
+    status: TripStatus,
+  ): Promise<Trip> {
+    return db.trip.update({
+      where: { id: tripId },
+      data: { status },
+    });
+  }
+
+  static async getTripWithDetails(tripId: string) {
+    return db.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        preferences: true,
+        budget: true,
+        itineraries: {
+          include: {
+            activities: true,
+          },
+        },
+        chatSessions: {
+          include: {
+            messages: true,
+          },
+        },
+      },
+    });
+  }
+
+  static async deleteTrip(tripId: string): Promise<Trip> {
+    return db.trip.delete({
+      where: { id: tripId },
     });
   }
 }
