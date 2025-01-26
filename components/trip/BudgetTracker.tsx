@@ -5,11 +5,13 @@ import { Budget } from '@prisma/client';
 import { Euro, Plane, Calendar } from 'lucide-react';
 
 export function BudgetTracker({ budget }: { budget: Budget }) {
-  const total = Object.values(budget).reduce(
-    (acc, curr) => Number(acc) + Number(curr),
-    0,
-  );
-  const spent = Number(total) * 0.66; // Example calculation
+  const total = budget.total;
+  const spent =
+    budget.accommodation +
+    budget.transport +
+    budget.activities +
+    budget.food +
+    budget.other;
 
   return (
     <Card className="bg-white shadow-md">

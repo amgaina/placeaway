@@ -195,7 +195,7 @@ export default function TripDetailsPage() {
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
-            className="fixed top-0 right-0 w-full md:w-[400px] h-full bg-white shadow-xl"
+            className="fixed top-0 z-50 right-0 w-full md:w-[400px] h-full bg-white shadow-xl"
           >
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">Trip Assistant</h2>
