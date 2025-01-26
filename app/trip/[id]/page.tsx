@@ -14,7 +14,7 @@ import { getTripWithDetails, updateTripPreferences } from '@/actions/trip';
 import FullPageErrorView from '@/components/error/full-page-error-view';
 import { useLoadScript, GoogleMap, Marker } from '@react-google-maps/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Calendar, MessageCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
