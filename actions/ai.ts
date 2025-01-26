@@ -1,10 +1,10 @@
 'use server';
 
 import * as z from 'zod';
-import { TripAIService } from '@/services/TripAIService';
 import { currentUser } from '@/lib/auth';
 import { ChatMessageSchema, TripPreferenceSchema } from '@/schemas/trip';
 import { ChatService } from '@/services/ChatService';
+import TripAIService from '@/services/TripAIService';
 
 export const generateTripSuggestion = async (
   values: z.infer<typeof TripPreferenceSchema>,

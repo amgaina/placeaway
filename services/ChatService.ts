@@ -1,5 +1,4 @@
 import { db } from '@/lib/db';
-import { TripAIService } from './TripAIService';
 import { ChatMessageInput, ChatMessageSchema } from '@/schemas/trip';
 import { processChatMessage } from '@/actions/ai';
 import { z } from 'zod';

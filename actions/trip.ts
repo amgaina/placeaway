@@ -8,7 +8,6 @@ import {
   BudgetSchema,
 } from '@/schemas/trip';
 import { currentUser } from '@/lib/auth';
-import { TripAIService } from '@/services/TripAIService';
 
 export async function createTrip(values: z.infer<typeof TripPreferenceSchema>) {
   try {

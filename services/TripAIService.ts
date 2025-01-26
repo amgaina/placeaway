@@ -7,7 +7,7 @@ import {
   TripPreferenceInput,
 } from '@/schemas/trip';
 
-export class TripAIService {
+class TripAIService {
   private static openai = new OpenAI({
     baseURL: 'https://api.deepseek.com',
     apiKey: process.env.DEEPSEEK_API_KEY,
@@ -116,3 +116,5 @@ ${preferences.origin ? `Starting from: ${preferences.origin}` : ''}`,
     return completion.choices[0].message.content || '';
   }
 }
+
+export default TripAIService;

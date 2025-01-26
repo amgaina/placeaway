@@ -6,7 +6,7 @@ import {
   ItineraryInput,
   AITripSuggestion,
 } from '@/schemas/trip';
-import { TripAIService } from '@/services/TripAIService';
+import TripAIService from './TripAIService';
 
 export class TripService {
   static async createTrip(
