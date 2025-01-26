@@ -60,6 +60,7 @@ model User {
   sessions              Session[]
   isTwoFactorEnabled    Boolean                @default(false)
   twoFactorConfirmation TwoFactorConfirmation?
+  trips                 Trip[]
 
   @@map("users")
 }
@@ -112,4 +113,161 @@ model ContactMessage {
   updatedAt DateTime @default(now())
 
   @@unique([email, isRead])
+}
+
+enum TripStatus {
+  PLANNING
+  BOOKED
+  COMPLETED
+  CANCELLED
+}
+
+model Trip {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  status      TripStatus @default(PLANNING)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  hasAISuggestions Boolean @default(false)
+  aiGeneratedAt   DateTime?
+
+  user        User     @relation(fields: [userId], references: [id])
+  preferences TripPreference?
+  chatSessions ChatSession[]
+  budget      Budget?
+  itineraries Itinerary[]
+  recommendations TripRecommendation[]
+
+  @@map("trips")
+}
+
+model TripPreference {
+  id            String   @id @default(cuid())
+  tripId        String   @unique
+  visitorCount  Int      @default(1)
+  hasPets       Boolean  @default(false)
+  hasChildren   Boolean  @default(false)
+  interests     String[]
+  origin        String?
+  destination   String?
+  
+  trip         Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("trip_preferences")
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  tripId    String
+  messages  ChatMessage[]
+  createdAt DateTime @default(now())
+  
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("chat_sessions")
+}
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+}
+
+model ChatMessage {
+  id            String   @id @default(cuid())
+  sessionId     String
+  content       String   @db.Text
+  role          ChatMessageRole   // user or assistant
+  createdAt     DateTime @default(now())
+  
+  session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+model Budget {
+  id            String   @id @default(cuid())
+  tripId        String   @unique
+  total         Float
+  accommodation Float
+  transport     Float
+  activities    Float
+  food          Float
+  other         Float
+  
+  trip          Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("budgets")
+}
+
+model Itinerary {
+  id          String   @id @default(cuid())
+  tripId      String
+  day         Int
+  date        DateTime
+  activities  Activity[]
+  
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("itineraries")
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  itineraryId String
+  title       String
+  description String?
+  startTime   DateTime?
+  endTime     DateTime?
+  location    String?
+  lat         Float?
+  lng         Float?
+  cost        Float? 
+  
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
+
+
+
+enum RecommendationCategory {
+  TRANSPORT
+  ACCOMMODATION
+  FOOD
+  ACTIVITIES
+  SAFETY
+  GENERAL
+  OTHER
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum RecommendationStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
+model TripRecommendation {
+  id          String                @id @default(cuid())
+  tripId      String
+  title       String
+  description String
+  category    RecommendationCategory
+  priority    RecommendationPriority @default(MEDIUM)
+  status      RecommendationStatus   @default(PENDING)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  trip        Trip                   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+
+  @@map("trip_recommendations")
 }

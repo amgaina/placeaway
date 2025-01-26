@@ -29,6 +29,7 @@ export default function BookingSlider() {
 
   const handleSubmit = () => {
     const queryParams = new URLSearchParams({
+      destination: place,
       visitors: state.visitorCount.toString(),
       hasPets: state.hasPets.toString(),
       hasChildren: state.hasChildren.toString(),

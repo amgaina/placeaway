@@ -8,7 +8,7 @@ import {
   DropResult,
 } from '@hello-pangea/dnd';
 import { Plane, Hotel, Car, Ticket, MessageCircle } from 'lucide-react';
-import { ChatInterface } from './chat-interface';
+// import { ChatInterface } from './chat-interface';
 
 const initialTripElements = [
   {
@@ -97,7 +97,7 @@ export function InteractiveTripPlayground() {
           Chat with AI Assistant
         </button>
       </div>
-      {isChatOpen && <ChatInterface onClose={() => setIsChatOpen(false)} />}
+      {/* {isChatOpen && <ChatInterface onClose={() => setIsChatOpen(false)} />} */}
     </div>
   );
 }
