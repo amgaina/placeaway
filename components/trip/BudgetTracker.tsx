@@ -1,15 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { AITripSuggestion } from '@/schemas/trip';
+import { Budget } from '@prisma/client';
 import { Euro, Plane, Calendar } from 'lucide-react';
 
-export function BudgetTracker({
-  budget,
-}: {
-  budget: AITripSuggestion['budget'];
-}) {
-  const total = Object.values(budget).reduce((acc, curr) => acc + curr, 0);
-  const spent = total * 0.66; // Example calculation
+export function BudgetTracker({ budget }: { budget: Budget }) {
+  const total = Object.values(budget).reduce(
+    (acc, curr) => Number(acc) + Number(curr),
+    0,
+  );
+  const spent = Number(total) * 0.66; // Example calculation
 
   return (
     <Card className="bg-white shadow-md">

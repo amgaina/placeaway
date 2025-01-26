@@ -2,13 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Info } from 'lucide-react';
 import { RecommendationCategory, RecommendationPriority } from '@/schemas/trip';
-
-type Recommendation = {
-  title: string;
-  description: string;
-  category: RecommendationCategory;
-  priority: RecommendationPriority;
-};
+import { TripRecommendation } from '@prisma/client';
 
 const categoryColors = {
   TRANSPORT: 'bg-blue-100 text-blue-800',
@@ -29,7 +23,7 @@ const priorityIcons = {
 export function RecommendationsList({
   recommendations,
 }: {
-  recommendations: Recommendation[];
+  recommendations: TripRecommendation[];
 }) {
   console.log(recommendations);
   return (

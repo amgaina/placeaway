@@ -26,9 +26,8 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trip } from '@prisma/client';
-import { TripWithPreferencesAndBudget } from '@/schemas/trip';
 import FullPageErrorView from '@/components/error/full-page-error-view';
+import { TripWithPreferencesAndBudgetAndTripRecommendation } from '@/schemas/trip';
 
 type ViewMode = 'grid' | 'list';
 type FilterStatus = 'all' | 'planning' | 'completed';
@@ -63,7 +62,9 @@ type FilterStatus = 'all' | 'planning' | 'completed';
  * @throws {Error} When trip data fetching fails
  */
 export default function TripsPage() {
-  const [trips, setTrips] = useState<TripWithPreferencesAndBudget[]>([]);
+  const [trips, setTrips] = useState<
+    TripWithPreferencesAndBudgetAndTripRecommendation[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');

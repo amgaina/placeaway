@@ -1,8 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plane } from 'lucide-react';
-import { AITripSuggestion } from '@/schemas/trip';
+import { TripWithPreferencesAndBudgetAndTripRecommendation } from '@/schemas/trip';
+import { format } from 'date-fns';
 
-export function TravelOverview({ data }: { data: AITripSuggestion }) {
+export function TravelOverview({
+  data,
+}: {
+  data: TripWithPreferencesAndBudgetAndTripRecommendation;
+}) {
   return (
     <Card className="bg-white shadow-md">
       <CardHeader className="p-4 bg-sky-100">
@@ -14,16 +19,16 @@ export function TravelOverview({ data }: { data: AITripSuggestion }) {
       <CardContent className="p-4">
         <div className="space-y-2 text-lg">
           <p>
-            <span className="font-semibold">Destination:</span>{' '}
-            {data.destination}
+            <span className="font-semibold">Destination:</span> {data.title}
           </p>
           <p>
             <span className="font-semibold">Activities:</span>{' '}
-            {data.activities.length}
+            {data.itineraries.length}
           </p>
           <p>
             <span className="font-semibold">Duration:</span>{' '}
-            {data.itinerary.length} days
+            {format(new Date(data.startDate ?? new Date()), 'MMM dd')} -
+            {format(new Date(data.endDate ?? new Date()), 'MMM dd, yyyy')}
           </p>
         </div>
       </CardContent>

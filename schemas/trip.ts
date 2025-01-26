@@ -1,4 +1,10 @@
-import { Budget, Trip } from '@prisma/client';
+import {
+  Activity,
+  Budget,
+  Itinerary,
+  Trip,
+  TripRecommendation,
+} from '@prisma/client';
 import { z } from 'zod';
 
 export const TripPreferenceSchema = z.object({
@@ -96,7 +102,8 @@ export const ChatMessageSchema = z.object({
 
 export type ChatMessageInput = z.infer<typeof ChatMessageSchema>;
 
-export interface TripWithPreferencesAndBudget extends Trip {
+export interface TripWithPreferencesAndBudgetAndTripRecommendation
+  extends Trip {
   preferences: {
     visitorCount: number;
     hasPets: boolean;
@@ -108,4 +115,6 @@ export interface TripWithPreferencesAndBudget extends Trip {
     tripId: string;
   } | null;
   budget: Budget | null;
+  recommendations: TripRecommendation[];
+  itineraries: (Itinerary & { activities: Activity[] })[];
 }
