@@ -3,22 +3,25 @@ import {
   AIMessage,
   AITripSuggestion,
   TripPreferenceInput,
+  AITripSuggestionSchema,
 } from '@/schemas/trip';
 
 export class AIService {
   private static openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY,
   });
 
   static async generateTripSuggestion(
     preferences: TripPreferenceInput['preferences'],
   ): Promise<AITripSuggestion> {
     const completion = await this.openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'deepseek-chat',
       messages: [
         {
           role: 'system',
-          content: 'You are a travel planning assistant.',
+          content:
+            'You are a travel planning assistant. Provide detailed trip suggestions in the required format.',
         },
         {
           role: 'user',
@@ -27,7 +30,10 @@ export class AIService {
       ],
     });
 
-    return JSON.parse(completion.choices[0].message.content || '{}');
+    const suggestion = JSON.parse(
+      completion.choices[0].message.content || '{}',
+    );
+    return AITripSuggestionSchema.parse(suggestion);
   }
 
   static async processChatMessage(

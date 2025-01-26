@@ -103,7 +103,11 @@ export class TripService {
         },
         chatSessions: {
           include: {
-            messages: true,
+            messages: {
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
           },
         },
       },

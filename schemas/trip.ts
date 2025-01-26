@@ -49,18 +49,27 @@ export interface AIMessage {
   content: string;
 }
 
-export interface AITripSuggestion {
-  destination: string;
-  activities: string[];
-  budget: {
-    accommodation: number;
-    transport: number;
-    activities: number;
-    food: number;
-    other: number;
-  };
-  recommendations: string[];
-}
+export const AITripSuggestionSchema = z.object({
+  destination: z.string(),
+  activities: z.array(z.string()),
+  budget: z.object({
+    accommodation: z.number(),
+    transport: z.number(),
+    activities: z.number(),
+    food: z.number(),
+    other: z.number(),
+  }),
+  recommendations: z.array(z.string()),
+  itinerary: z.array(
+    z.object({
+      day: z.number(),
+      activities: z.array(z.string()),
+      date: z.string().optional(),
+    }),
+  ),
+});
+
+export type AITripSuggestion = z.infer<typeof AITripSuggestionSchema>;
 
 export const ChatMessageSchema = z.object({
   content: z.string().min(1),
