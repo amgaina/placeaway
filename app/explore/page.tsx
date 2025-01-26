@@ -1,9 +1,5 @@
-'use client';
-import { useState } from 'react';
 import Link from 'next/link';
 import {
-  Search,
-  Filter,
   MapPin,
   Calendar,
   Users,
@@ -12,12 +8,11 @@ import {
   Utensils,
 } from 'lucide-react';
 import Layout from '../components/layout';
-import InteractiveMap from '@/components/interactive-map';
-import FilterSidebar from '@/components/filter-sidebar';
 import PersonalizedRecommendations from '@/components/personalized-recommendations';
 import DestinationCard from '@/components/destination-card';
 import UserGeneratedContent from '@/components/user-generated-content';
 import InspiringVisuals from '@/components/inspiring-visuals';
+import Search_bar from './search_bar';
 
 const categories = [
   { name: 'Adventure', icon: Compass },
@@ -50,7 +45,7 @@ const featuredDestinations = [
   {
     id: 3,
     name: 'Machu Picchu',
-    image: '/Images/place_image/machu-picchu.png',
+    image: '/Images/place_image/machu_picchu.png',
     description: 'Ancient wonder',
     category: 'Adventure',
     price: 1500,
@@ -90,30 +85,7 @@ const featuredDestinations = [
 ];
 
 export default function Explore() {
-  const [showMap, setShowMap] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filteredDestinations, setFilteredDestinations] =
-    useState(featuredDestinations);
-
-  interface FilterOptions {
-    category?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    duration?: number;
-  }
-
-  const handleFilterChange = (newFilters: FilterOptions) => {
-    // Apply filters to featuredDestinations
-    // This is a simplified example. In a real app, you'd have more complex filtering logic
-    const filtered = featuredDestinations.filter(
-      (dest) =>
-        (!newFilters.category || dest.category === newFilters.category) &&
-        (!newFilters.minPrice || dest.price >= newFilters.minPrice) &&
-        (!newFilters.maxPrice || dest.price <= newFilters.maxPrice) &&
-        (!newFilters.duration || dest.duration <= newFilters.duration),
-    );
-    setFilteredDestinations(filtered);
-  };
+  const filteredDestinations = featuredDestinations;
 
   return (
     <Layout>
@@ -122,39 +94,8 @@ export default function Explore() {
           <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
             Explore Destinations
           </h1>
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex-grow max-w-2xl mx-auto">
-              <div className="flex items-center bg-white rounded-full overflow-hidden shadow-lg">
-                <input
-                  type="text"
-                  placeholder="Search destinations..."
-                  className="flex-grow px-6 py-4 text-gray-700 focus:outline-none"
-                />
-                <button className="bg-orange-500 text-white px-6 py-4 hover:bg-orange-600 transition-colors">
-                  <Search className="h-6 w-6" />
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="ml-4 p-2 bg-white rounded-full shadow-lg text-gray-600 hover:text-purple-500 transition-colors"
-            >
-              <Filter className="h-6 w-6" />
-            </button>
-            <button
-              onClick={() => setShowMap(!showMap)}
-              className="ml-4 p-2 bg-white rounded-full shadow-lg text-gray-600 hover:text-turquoise-500 transition-colors"
-            >
-              <MapPin className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* {showMap && <InteractiveMap destinations={filteredDestinations} />} */}
-          {showMap && <InteractiveMap />}
+          <Search_bar />
           <div className="flex">
-            {showFilters && (
-              <FilterSidebar onFilterChange={handleFilterChange} />
-            )}
             <div className="flex-grow">
               <div className="mb-12">
                 <h2 className="text-2xl font-bold mb-4 text-gray-800">
@@ -234,7 +175,7 @@ export default function Explore() {
         </div>
       </section>
 
-      <section className="py-12 bg-gradient-to-r from-orange-500 to-turquoise-500 text-white">
+      <section className="py-12 bg-gradient-to-r from-orange-500 to-teal-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Start Your Journey?
