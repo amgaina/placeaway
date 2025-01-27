@@ -86,6 +86,7 @@ export async function getTripWithDetails(tripId: string) {
     if (!user || !user.id) return { error: 'Unauthorized' };
 
     const trip = await TripService.getTripWithDetails(tripId);
+    if (!trip) return { error: 'Trip not found' };
 
     return { success: 'Trip fetched successfully', data: trip };
   } catch (error) {

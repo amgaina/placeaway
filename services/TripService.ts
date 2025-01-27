@@ -11,13 +11,13 @@ import {
   TripPreferenceInput,
   BudgetInput,
   ItineraryInput,
-  AITripSuggestion,
   TripWithPreferencesAndBudgetAndTripRecommendation,
   RecommendationCategory,
   RecommendationPriority,
 } from '@/schemas/trip';
 import TripAIService from './TripAIService';
 import { TripWithDetails } from '@/types/trip';
+import { AITripSuggestion } from '@/types/ai';
 
 interface ActivityCreateInput
   extends Omit<Prisma.ActivityCreateInput, 'itinerary'> {
@@ -209,6 +209,7 @@ export class TripService {
         trip,
       );
 
+      console.log('suggestions', suggestions);
       if (!suggestions) {
         throw new Error('Failed to generate AI suggestions');
       }

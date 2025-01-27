@@ -36,7 +36,7 @@ export function ItineraryView({
   };
 
   const timeSlots: TimeSlot[] = ['MORNING', 'AFTERNOON', 'EVENING'];
-
+  console.log(itinerary);
   return (
     <Card>
       <CardHeader>

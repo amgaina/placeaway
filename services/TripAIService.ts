@@ -32,62 +32,48 @@ export default class TripAIService {
   private static readonly DATE_FORMAT = 'yyyy-MM-dd';
   private static readonly TIME_FORMAT = 'HH:mm:ss';
 
-  private static readonly SYSTEM_PROMPT = `You are an AI travel planner that generates detailed trip itineraries in JSON format.
-
-Required Response Structure:
-{
-  "destination": string,
-  "activities": [{
-    "title": string,
-    "description": string,
-    "startTime": string (ISO datetime),
-    "endTime": string (ISO datetime),
-    "location": string (full address),
-    "lat": number | null,
-    "lng": number | null,
-    "cost": number,
-    "type": "ATTRACTION" | "MEAL" | "TRANSPORT" | "BREAK" | "ACCOMMODATION",
-    "timeSlot": "MORNING" | "AFTERNOON" | "EVENING",
-    "status": "PENDING"
-  }],
-  "budget": {
-    "total": number,
-    "accommodation": number,
-    "transport": number,
-    "activities": number,
-    "food": number,
-    "other": number
-  },
-  "recommendations": [{
-    "title": string,
-    "description": string,
-    "category": "TRANSPORT" | "ACCOMMODATION" | "FOOD" | "ACTIVITIES" | "SAFETY" | "GENERAL" | "OTHER",
-    "priority": "LOW" | "MEDIUM" | "HIGH",
-    "status": "PENDING"
-  }],
-  "itinerary": [{
-    "day": number,
-    "date": string (YYYY-MM-DD),
-    "weatherNote": string,
-    "activities": [Activity objects],
-    "tips": string[]
-  }]
-}
-
-Validation Rules:
-1. All activities must have valid locations for geocoding
-2. Times must be in ISO format
-3. Costs must be positive numbers
-4. Each day must have activities spread across timeSlots
-5. Budget must account for all activities
-6. At least 3 recommendations per trip
-7. Activities must have appropriate type and timeSlot
-8. Each day should have 2-3 relevant tips
-
-Response must be valid JSON with all required fields.`;
+  private static readonly SYSTEM_PROMPT = `Generate travel itinerary JSON:
+  {
+    "destination": string,
+    "activities": [{
+      "title": string (max 50 chars),
+      "description": string (max 200 chars),
+      "startTime": ISO string,
+      "endTime": ISO string,
+      "location": string,
+      "cost": number (>0),
+      "type": enum("ATTRACTION","MEAL","TRANSPORT","BREAK","ACCOMMODATION"),
+      "timeSlot": enum("MORNING","AFTERNOON","EVENING"),
+    }],
+    "budget": {
+      "total": number,
+      "accommodation": number,
+      "transport": number,
+      "activities": number,
+      "food": number
+    },
+    "recommendations": [{
+      "title": string (max 50 chars),
+      "description": string (max 200 chars),
+      "category": enum("TRANSPORT","ACCOMMODATION","FOOD","ACTIVITIES","SAFETY","GENERAL","OTHER"),
+      "priority": enum("LOW","MEDIUM","HIGH"),
+    }],
+    "itinerary": [{
+      "day": number,
+      "date": string (YYYY-MM-DD),
+      "activities": [Activity],
+      "tips": string[] (max 3)
+    }]
+  }
+  
+  Rules:
+  - Min 3 recommendations
+  - Activities across all timeSlots
+  - create itinerary for max of 3 days if trip duration is more than 3 days, else create itinerary for all days
+  - 1 tip per day`;
 
   private static readonly TIMEOUT = 360000; // 6 minutes
-  private static readonly MAX_RETRIES = 3;
+  private static readonly MAX_RETRIES = 1;
   private static readonly RETRY_DELAY = 2000; // 2 seconds
 
   private static geocoder = new Client({});
@@ -290,65 +276,6 @@ Response must be valid JSON with all required fields.`;
     });
   }
 
-  private static async retryWithBackoff(
-    operation: () => Promise<any>,
-    retryCount: number = 0,
-  ): Promise<any> {
-    try {
-      return await operation();
-    } catch (error) {
-      if (retryCount >= this.MAX_RETRIES) throw error;
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, this.RETRY_DELAY * Math.pow(2, retryCount)),
-      );
-
-      return this.retryWithBackoff(operation, retryCount + 1);
-    }
-  }
-
-  private static validateAndLogResponse(response: any) {
-    try {
-      // Step 2: Validate basic structure
-      if (!response) {
-        this.log('Error: Empty response');
-        throw new Error('Empty AI response');
-      }
-
-      // Step 3: Parse if string
-      let parsedResponse =
-        typeof response === 'string' ? JSON.parse(response) : response;
-
-      // Step 4: Validate required fields
-      const requiredFields = [
-        'activities',
-        'itinerary',
-        'recommendations',
-        'budget',
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => !parsedResponse[field],
-      );
-      if (missingFields.length > 0) {
-        this.log('Error: Missing required fields:', missingFields);
-        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-      }
-
-      // Step 5: Log structure details
-      this.log('Response structure:', {
-        activitiesCount: parsedResponse.activities?.length || 0,
-        itineraryDays: parsedResponse.itinerary?.length || 0,
-        recommendationsCount: parsedResponse.recommendations?.length || 0,
-        hasBudget: !!parsedResponse.budget,
-      });
-
-      return parsedResponse;
-    } catch (error) {
-      this.log('Validation error:', error);
-      throw error;
-    }
-  }
-
   private static buildPrompt(
     preferences: TripPreferenceInput['preferences'],
     trip: Trip,
@@ -385,51 +312,64 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
 }`;
   }
 
+  private static readonly MAX_RESPONSE_SIZE = 10000;
+
+  private static cleanAndValidateJSON(content: string): string {
+    // Remove any trailing characters
+    let cleaned = content.trim();
+
+    // Validate JSON structure
+    try {
+      cleaned = JSON.parse(cleaned);
+      return cleaned;
+    } catch (e) {
+      throw new Error('Invalid JSON structure');
+    }
+  }
+
   static async generateTripSuggestion(
     preferences: TripPreferenceInput['preferences'],
     trip: Trip,
   ) {
-    return this.retryWithBackoff(async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        this.log('Request timed out after', format(new Date(), 'HH:mm:ss'));
-        controller.abort();
-      }, this.TIMEOUT);
+    const controller = new AbortController();
+    let retries = 0;
 
+    while (retries < this.MAX_RETRIES) {
       try {
-        this.log('Starting AI request with preferences:', preferences);
-
+        this.log('Generating trip suggestion:', preferences);
         const completion = await this.openai.chat.completions.create(
           {
             model: 'deepseek-chat',
             messages: [
               { role: 'system', content: this.SYSTEM_PROMPT },
-              {
-                role: 'user',
-                content: this.buildPrompt(preferences, trip),
-              },
+              { role: 'user', content: this.buildPrompt(preferences, trip) },
             ],
+            response_format: { type: 'json_object' },
             temperature: 0.3,
-            max_tokens: 4000,
-            stream: false,
-            response_format: {
-              type: 'json_object',
-            },
+            max_tokens: 6000, // Reduced to prevent truncation
           },
           { signal: controller.signal },
         );
-        this.log('AI response:', completion.choices);
 
-        const response = completion.choices[0]?.message?.content;
+        const content = completion.choices[0].message.content;
+        if (!content) throw new Error('Empty response from AI');
 
-        const validatedResponse = this.validateAndLogResponse(response);
-        this.log('Validated response:', validatedResponse);
+        const suggestion = this.cleanAndValidateJSON(content);
+        this.log('AI suggestion:', suggestion);
 
-        return validatedResponse;
-      } finally {
-        clearTimeout(timeoutId);
+        const transformed = await this.transformAIResponse(suggestion);
+        return transformed;
+      } catch (error) {
+        console.error('Failed to generate trip suggestion:', error);
+        retries++;
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('AI generation timed out. Please try again.');
+        }
+        if (retries === this.MAX_RETRIES) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
       }
-    });
+    }
+    return null;
   }
 
   static async processChatMessage(
