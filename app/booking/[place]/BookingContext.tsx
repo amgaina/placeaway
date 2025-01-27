@@ -24,7 +24,7 @@ const initialState: BookingState = {
   visitorCount: 1,
   hasPets: false,
   hasChildren: false,
-  startDate: null,
+  startDate: new Date(),
   endDate: null,
   interests: [],
 };
