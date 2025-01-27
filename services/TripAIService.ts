@@ -346,11 +346,12 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
             ],
             response_format: { type: 'json_object' },
             temperature: 0.3,
-            max_tokens: 6000, // Reduced to prevent truncation
+            max_tokens: 8000, // Reduced to prevent truncation
           },
           { signal: controller.signal },
         );
 
+        console.log('completion', completion);
         const content = completion.choices[0].message.content;
         if (!content) throw new Error('Empty response from AI');
 

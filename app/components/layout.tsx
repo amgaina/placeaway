@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { MountainSnow } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { currentUser } from '@/lib/auth';
+import MainHeader from '@/components/header/MainHeader';
 
 export default async function Layout({
   children,
@@ -10,6 +11,7 @@ export default async function Layout({
 }) {
   return (
     <TooltipProvider>
+      <MainHeader />
       <div className="flex flex-col min-h-screen bg-background">
         <main className="flex-grow container mx-auto px-4 py-8">
           {children}

@@ -1,11 +1,18 @@
-import { Upload, ThumbsUp, ThumbsDown, Star } from 'lucide-react';
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { ActivityStatus, TimeSlot, ActivityType } from '@prisma/client';
 import { ActivityWithLocation } from '@/types/activity';
-import { Rating } from '../ui/Rating';
-import { ActivityActions } from './ActivityActions';
+import { ImageGallery } from './ImageGallery';
+import { ReviewsList } from './ReviewsList';
+import { FileUpload } from './FileUpload';
+import { ActivityStatus } from '@prisma/client';
+import { ActivityDetails } from './ActivityDetails';
+import { getPlaceDetails } from '@/actions/places';
+import LoadingIndicator from '../loading/loading-indicator';
+import { PlaceDetails } from '@/services/GoogleMapsService';
+import { toast } from 'sonner';
 
 interface ActivityCardProps {
   activity: ActivityWithLocation;
@@ -15,50 +22,97 @@ interface ActivityCardProps {
   onAttachment: (id: string, file: File) => Promise<void>;
 }
 
-export function ActivityCard({
+export const ActivityCard: React.FC<ActivityCardProps> = ({
   activity,
+  onSelect,
   onStatusChange,
   onRating,
   onAttachment,
-  onSelect,
-}: ActivityCardProps) {
-  const [uploading, setUploading] = useState(false);
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPlaceLoading, setIsPlaceLoading] = useState(false);
+  const [placeDetails, setPlaceDetails] = useState<PlaceDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setUploading(true);
+  useEffect(() => {
+    const fetchPlaceDetails = async () => {
+      if (!activity.location) return;
+
+      setIsPlaceLoading(true);
+      setError(null);
+
       try {
-        await onAttachment(activity.id, file);
+        const result = await getPlaceDetails(activity.location);
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        if (!result.data) {
+          throw new Error('No place details found');
+        }
+
+        toast.success('Place details loaded');
+        console.log('Place details:', result.data);
+
+        setPlaceDetails(result.data);
+      } catch (err) {
+        toast.error('Failed to load place details');
+        setError('Failed to load place details');
+        console.error(err);
       } finally {
-        setUploading(false);
+        setIsPlaceLoading(false);
       }
-    }
-  };
+    };
+
+    fetchPlaceDetails();
+  }, [activity.location]);
 
   return (
     <Card onClick={onSelect} className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <h4 className="font-medium">{activity.title}</h4>
-            <p className="text-sm text-muted-foreground">
-              {activity.description}
-            </p>
-            <Rating
-              value={activity.rating || 0}
-              onChange={(rating) => onRating(activity.id, rating)}
-            />
+      <CardContent className="p-4 space-y-4">
+        <ActivityDetails
+          activity={activity}
+          onRating={onRating}
+          onStatusChange={onStatusChange}
+        />
+
+        {isPlaceLoading && (
+          <div className="flex justify-center p-4">
+            <LoadingIndicator />
           </div>
-          <ActivityActions
-            status={activity.status}
-            onStatusChange={(status) => onStatusChange(activity.id, status)}
-            onAttachment={(file) => onAttachment(activity.id, file)}
+        )}
+
+        {error && (
+          <div className="text-sm text-red-500 text-center">{error}</div>
+        )}
+
+        {placeDetails?.photos && <ImageGallery images={placeDetails.photos} />}
+
+        {placeDetails?.reviews && (
+          <ReviewsList
+            reviews={placeDetails.reviews}
+            rating={placeDetails.rating}
+            total={placeDetails.userRatingsTotal}
           />
-        </div>
+        )}
+
+        <FileUpload
+          onUpload={async (files) => {
+            setIsLoading(true);
+            try {
+              await onAttachment(activity.id, files[0]);
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+          activity={{
+            ...activity,
+            attachments: activity.attachments.map((attachment) => ({
+              ...attachment,
+              activityId: activity.id,
+            })),
+          }}
+        />
       </CardContent>
     </Card>
   );
-}
+};
