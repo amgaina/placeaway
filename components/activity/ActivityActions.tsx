@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from '../ui/tooltip';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface ActivityActionsProps {
   status: ActivityStatus;
@@ -27,6 +28,7 @@ export function ActivityActions({
     try {
       await onStatusChange(newStatus);
     } finally {
+      toast.success('Activity updated successfully');
       setIsLoading(false);
     }
   };
@@ -58,6 +60,8 @@ export function ActivityActions({
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : status === 'APPROVED' ? (
+                <Check className="w-4 h-4 text-white" />
               ) : (
                 <Check className="w-4 h-4" />
               )}

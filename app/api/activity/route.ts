@@ -47,12 +47,13 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { activityId, rating } = ActivityUpdateSchema.parse(body);
+    const { activityId, rating, status } = ActivityUpdateSchema.parse(body);
 
     const activity = await db.activity.update({
       where: { id: activityId },
       data: {
         rating,
+        status: status as ActivityStatus,
       },
       include: {
         attachments: true,
