@@ -208,30 +208,67 @@ model Itinerary {
   day         Int
   date        DateTime
   activities  Activity[]
+  weatherNote String?
+  tips        String[]
   
   trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@map("itineraries")
 }
 
+enum ActivityStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum TimeSlot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum ActivityType {
+  ATTRACTION
+  MEAL
+  TRANSPORT
+  BREAK
+  ACCOMMODATION
+}
+
 model Activity {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   itineraryId String
   title       String
   description String?
-  startTime   DateTime?
-  endTime     DateTime?
+  startTime   String?
+  endTime     String?
   location    String?
   lat         Float?
   lng         Float?
-  cost        Float? 
-  
-  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  cost        Float?
+  rating      Int          @default(0)
+  feedback    String?
+  status      ActivityStatus @default(PENDING)
+  type        ActivityType   @default(ATTRACTION)
+  timeSlot    TimeSlot      @default(MORNING)
+  attachments Attachment[]
+  itinerary   Itinerary     @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
 
   @@map("activities")
 }
 
+model Attachment {
+  id         String   @id @default(cuid())
+  activityId String
+  url        String
+  type       String
+  filename   String
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
+  @@map("attachments")
+}
 
 enum RecommendationCategory {
   TRANSPORT

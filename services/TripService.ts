@@ -1,4 +1,11 @@
-import { Trip, TripStatus, Budget, Itinerary } from '@prisma/client';
+import {
+  Trip,
+  TripStatus,
+  Budget,
+  Itinerary,
+  Prisma,
+  RecommendationStatus,
+} from '@prisma/client';
 import { db } from '@/lib/db';
 import {
   TripPreferenceInput,
@@ -6,8 +13,22 @@ import {
   ItineraryInput,
   AITripSuggestion,
   TripWithPreferencesAndBudgetAndTripRecommendation,
+  RecommendationCategory,
+  RecommendationPriority,
 } from '@/schemas/trip';
 import TripAIService from './TripAIService';
+import { TripWithDetails } from '@/types/trip';
+
+interface ActivityCreateInput
+  extends Omit<Prisma.ActivityCreateInput, 'itinerary'> {
+  attachments?: {
+    create: {
+      url: string;
+      type: string;
+      filename: string;
+    }[];
+  };
+}
 
 export class TripService {
   static async createTrip(
@@ -25,6 +46,15 @@ export class TripService {
         },
       },
     });
+  }
+
+  static async getUserTrip(userId: string, tripId: string): Promise<Trip> {
+    const trip = await db.trip.findFirst({
+      where: { userId, id: tripId },
+    });
+
+    if (!trip) throw new Error('Trip not found');
+    return trip;
   }
 
   static async updateTrip(
@@ -84,15 +114,39 @@ export class TripService {
   ): Promise<Itinerary> {
     return db.itinerary.create({
       data: {
-        ...data,
-        date: data.date || new Date(),
         tripId,
+        day: data.day,
+        date: data.date || new Date(),
         activities: {
           create: data.activities.map((activity) => ({
-            ...activity,
+            title: activity.title,
+            description: activity.description,
             startTime: activity.startTime,
             endTime: activity.endTime,
+            location: activity.location,
+            lat: activity.lat,
+            lng: activity.lng,
+            cost: activity.cost,
+            status: activity.status,
+            type: activity.type,
+            timeSlot: activity.timeSlot,
+            attachments: activity.attachments
+              ? {
+                  create: activity.attachments.map((attachment) => ({
+                    url: attachment.url,
+                    type: attachment.type,
+                    filename: attachment.filename,
+                  })),
+                }
+              : undefined,
           })),
+        },
+      },
+      include: {
+        activities: {
+          include: {
+            attachments: true,
+          },
         },
       },
     });
@@ -108,7 +162,10 @@ export class TripService {
     });
   }
 
-  static async getTripWithDetails(tripId: string) {
+  static async getTripWithDetails(
+    tripId: string,
+    reGenereteAISuggestion = true,
+  ): Promise<TripWithDetails> {
     const trip = await db.trip.findUnique({
       where: { id: tripId },
       include: {
@@ -116,7 +173,11 @@ export class TripService {
         budget: true,
         itineraries: {
           include: {
-            activities: true,
+            activities: {
+              include: {
+                attachments: true,
+              },
+            },
           },
         },
         recommendations: true,
@@ -130,7 +191,7 @@ export class TripService {
 
     if (!trip) throw new Error('Trip not found');
 
-    if (!trip.hasAISuggestions) {
+    if (!trip.hasAISuggestions && reGenereteAISuggestion) {
       if (!trip.preferences) throw new Error('Trip preferences not found');
       // Generate AI suggestions if missing
       const { origin, destination, ...rest } = trip.preferences;
@@ -139,11 +200,14 @@ export class TripService {
         throw new Error('Trip destination is required');
       }
 
-      const suggestions = await TripAIService.generateTripSuggestion({
-        ...rest,
-        origin: origin || undefined,
-        destination: destination,
-      });
+      const suggestions = await TripAIService.generateTripSuggestion(
+        {
+          ...rest,
+          origin: origin || undefined,
+          destination: destination,
+        },
+        trip,
+      );
 
       if (!suggestions) {
         throw new Error('Failed to generate AI suggestions');
@@ -160,7 +224,7 @@ export class TripService {
   static async updateTripWithAISuggestions(
     tripId: string,
     suggestions: AITripSuggestion,
-  ) {
+  ): Promise<TripWithDetails> {
     return db.$transaction(async (tx) => {
       // Update trip status
       await tx.trip.update({
@@ -177,24 +241,10 @@ export class TripService {
           tripId,
           title: rec.title,
           description: rec.description,
-          category: rec.category,
-          priority: rec.priority,
-          status: 'PENDING',
+          category: rec.category as RecommendationCategory,
+          priority: rec.priority as RecommendationPriority,
+          status: 'PENDING' as RecommendationStatus,
         })),
-      });
-
-      // Create budget
-      await tx.budget.upsert({
-        where: { tripId },
-        create: {
-          tripId,
-          total: Object.values(suggestions.budget).reduce((a, b) => a + b, 0),
-          ...suggestions.budget,
-        },
-        update: {
-          total: Object.values(suggestions.budget).reduce((a, b) => a + b, 0),
-          ...suggestions.budget,
-        },
       });
 
       // Create itineraries with activities
@@ -203,7 +253,9 @@ export class TripService {
           data: {
             tripId,
             day: day.day,
-            date: day.date || new Date(),
+            date: day.date ? new Date(day.date) : new Date(),
+            weatherNote: day.weatherNote,
+            tips: day.tips,
           },
         });
 
@@ -218,23 +270,14 @@ export class TripService {
             lat: activity.lat,
             lng: activity.lng,
             cost: activity.cost,
+            status: 'PENDING',
+            type: activity.type,
+            timeSlot: activity.timeSlot,
           })),
         });
       }
 
-      return tx.trip.findUnique({
-        where: { id: tripId },
-        include: {
-          preferences: true,
-          budget: true,
-          recommendations: true,
-          itineraries: {
-            include: {
-              activities: true,
-            },
-          },
-        },
-      });
+      return this.getTripWithDetails(tripId, false);
     });
   }
 

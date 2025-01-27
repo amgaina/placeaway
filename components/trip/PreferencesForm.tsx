@@ -21,8 +21,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
-import { TripPreferenceInput, TripPreferenceSchema } from '@/schemas/trip';
+import {
+  TripPreferenceInput,
+  TripPreferenceSchema,
+  TripWithPreferencesAndBudgetAndTripRecommendation,
+} from '@/schemas/trip';
 import { Trip } from '@prisma/client';
+import { z } from 'zod';
 
 const interests = [
   'Art & Culture',
@@ -36,8 +41,8 @@ const interests = [
 ] as const;
 
 interface PreferencesFormProps {
-  defaultValues?: Trip;
-  onSubmit: (values: Trip) => Promise<void>;
+  defaultValues?: TripWithPreferencesAndBudgetAndTripRecommendation;
+  onSubmit: (values: TripPreferenceInput) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -57,12 +62,12 @@ export function PreferencesForm({
         defaultValues?.endDate ||
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       preferences: {
-        destination: '',
-        visitorCount: 1,
-        interests: [],
-        hasChildren: false,
-        hasPets: false,
-        origin: '',
+        destination: defaultValues?.title || '',
+        visitorCount: defaultValues?.preferences?.visitorCount || 1,
+        interests: defaultValues?.preferences?.interests || [],
+        hasChildren: defaultValues?.preferences?.hasChildren || false,
+        hasPets: defaultValues?.preferences?.hasPets || false,
+        origin: defaultValues?.preferences?.origin || '',
       },
     },
   });
@@ -70,17 +75,18 @@ export function PreferencesForm({
   async function handleSubmit(values: TripPreferenceInput) {
     setIsSubmitting(true);
     try {
-      const transformedValues: Trip = {
-        id: defaultValues?.id ?? '',
-        userId: defaultValues?.userId ?? '',
+      const transformedValues: z.infer<typeof TripPreferenceSchema> = {
         title: values.title,
-        status: defaultValues?.status ?? 'PLANNING',
-        startDate: values.startDate ?? null,
-        endDate: values.endDate ?? null,
-        createdAt: defaultValues?.createdAt ?? new Date(),
-        updatedAt: new Date(),
-        hasAISuggestions: defaultValues?.hasAISuggestions ?? false,
-        aiGeneratedAt: defaultValues?.aiGeneratedAt ?? null,
+        startDate: values.startDate?.valueOf() ? values.startDate : undefined,
+        endDate: values.endDate?.valueOf() ? values.endDate : undefined,
+        preferences: {
+          visitorCount: values.preferences.visitorCount,
+          hasPets: values.preferences.hasPets,
+          hasChildren: values.preferences.hasChildren,
+          interests: values.preferences.interests,
+          destination: values.preferences.destination,
+          origin: values.preferences.origin,
+        },
       };
       await onSubmit(transformedValues);
     } finally {
