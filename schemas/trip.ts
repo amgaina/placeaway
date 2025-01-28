@@ -154,7 +154,6 @@ export const RecommendationSchema = z.object({
 
 export const AITripSuggestionSchema = z.object({
   destination: z.string(),
-  activities: z.array(ActivitySchema),
   budget: z.record(z.number()),
   recommendations: z.array(
     z.object({

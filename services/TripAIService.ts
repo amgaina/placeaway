@@ -35,46 +35,54 @@ export default class TripAIService {
   private static readonly SYSTEM_PROMPT = `Generate travel itinerary JSON:
   {
     "destination": string,
-    "activities": [{
-      "title": string (max 50 chars),
-      "description": string (max 200 chars),
-      "startTime": ISO string,
-      "endTime": ISO string,
-      "location": string,
-      "cost": number (>0),
-      "type": enum("ATTRACTION","MEAL","TRANSPORT","BREAK","ACCOMMODATION"),
-      "timeSlot": enum("MORNING","AFTERNOON","EVENING"),
-    }],
     "budget": {
       "total": number,
       "accommodation": number,
       "transport": number,
       "activities": number,
-      "food": number
+      "food": number,
+      "other": number
     },
     "recommendations": [{
       "title": string (max 50 chars),
       "description": string (max 200 chars),
       "category": enum("TRANSPORT","ACCOMMODATION","FOOD","ACTIVITIES","SAFETY","GENERAL","OTHER"),
       "priority": enum("LOW","MEDIUM","HIGH"),
+      "status": "PENDING"
     }],
     "itinerary": [{
       "day": number,
       "date": string (YYYY-MM-DD),
-      "activities": [Activity],
-      "tips": string[] (max 3)
+      "weatherNote": string?,
+      "tips": string[],
+      "activities": [{
+        "title": string (max 50 chars),
+        "description": string (max 200 chars),
+        "startTime": string (ISO),
+        "endTime": string (ISO),
+        "location": string,
+        "lat": number?,
+        "lng": number?,
+        "cost": number,
+        "rating": number,
+        "feedback": string?,
+        "status": enum("PENDING","APPROVED","REJECTED","COMPLETED"),
+        "type": enum("ATTRACTION","MEAL","TRANSPORT","BREAK","ACCOMMODATION"),
+        "timeSlot": enum("MORNING","AFTERNOON","EVENING")
+      }]
     }]
   }
-  
+
   Rules:
   - Min 3 recommendations
-  - Activities across all timeSlots
-  - create itinerary for max of 3 days if trip duration is more than 3 days, else create itinerary for all days
-  - 1 tip per day`;
+  - Activities across all timeSlots (MORNING, AFTERNOON, EVENING)
+  - Max 3 days itinerary if trip > 3 days, else all days
+  - 1 tip per day
+  - All costs in numbers
+  - All dates in ISO format
+  - All enums must match exactly`;
 
-  private static readonly TIMEOUT = 360000; // 6 minutes
   private static readonly MAX_RETRIES = 1;
-  private static readonly RETRY_DELAY = 2000; // 2 seconds
 
   private static geocoder = new Client({});
 
@@ -272,7 +280,9 @@ export default class TripAIService {
         }
       }
 
-      return TripService.getTripWithDetails(tripId);
+      const trip = await TripService.getTripWithDetails(tripId);
+      if (!trip) throw new Error('Failed to update trip with AI suggestions');
+      return trip;
     });
   }
 
@@ -345,8 +355,8 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
               { role: 'user', content: this.buildPrompt(preferences, trip) },
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.3,
-            max_tokens: 8000, // Reduced to prevent truncation
+            temperature: 0.6,
+            max_tokens: 6000, // Reduced to prevent truncation
           },
           { signal: controller.signal },
         );
@@ -366,7 +376,7 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
         if (error instanceof Error && error.name === 'AbortError') {
           throw new Error('AI generation timed out. Please try again.');
         }
-        if (retries === this.MAX_RETRIES) throw error;
+        if (retries === this.MAX_RETRIES) return null;
         await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
       }
     }

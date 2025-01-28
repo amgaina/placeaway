@@ -125,6 +125,7 @@ export default function TripPage() {
 
   const handleUpdate = async (values: z.infer<typeof TripPreferenceSchema>) => {
     const result = await updateTripPreferences(params.id as string, values);
+
     if (result.data) {
       setTripData(result.data);
       if (result.success) {

@@ -164,70 +164,90 @@ export class TripService {
 
   static async getTripWithDetails(
     tripId: string,
-    reGenereteAISuggestion = true,
-  ): Promise<TripWithDetails> {
-    const trip = await db.trip.findUnique({
-      where: { id: tripId },
-      include: {
-        preferences: true,
-        budget: true,
-        itineraries: {
+    reGenerateAISuggestion = true,
+  ): Promise<TripWithDetails | null> {
+    try {
+      console.log('1. Starting getTripWithDetails');
+
+      if (!tripId) {
+        console.log('2. No tripId provided');
+        throw new Error('Trip ID is required');
+      }
+
+      console.log('3. Finding trip:', tripId);
+      const trip = await db.$transaction(async (tx) => {
+        const result = await tx.trip.findUnique({
+          where: { id: tripId },
           include: {
-            activities: {
+            preferences: true,
+            budget: true,
+            itineraries: {
               include: {
-                attachments: true,
+                activities: {
+                  include: {
+                    attachments: true,
+                  },
+                },
+              },
+            },
+            recommendations: true,
+            chatSessions: {
+              include: {
+                messages: true,
               },
             },
           },
-        },
-        recommendations: true,
-        chatSessions: {
-          include: {
-            messages: true,
+        });
+
+        console.log('4. Database query completed');
+        return result;
+      });
+
+      console.log('5. Trip found:', !!trip);
+      if (!trip) {
+        return null;
+      }
+
+      console.log('6. Checking AI suggestions');
+      if (!trip.hasAISuggestions && reGenerateAISuggestion) {
+        if (!trip.preferences) {
+          throw new Error('Trip preferences not found');
+        }
+
+        const { origin, destination, ...rest } = trip.preferences;
+
+        if (!destination) {
+          throw new Error('Trip destination is required');
+        }
+
+        const suggestions = await TripAIService.generateTripSuggestion(
+          {
+            ...rest,
+            origin: origin || undefined,
+            destination,
           },
-        },
-      },
-    });
+          trip,
+        );
 
-    if (!trip) throw new Error('Trip not found');
-
-    if (!trip.hasAISuggestions && reGenereteAISuggestion) {
-      if (!trip.preferences) throw new Error('Trip preferences not found');
-      // Generate AI suggestions if missing
-      const { origin, destination, ...rest } = trip.preferences;
-
-      if (!destination) {
-        throw new Error('Trip destination is required');
+        if (suggestions) {
+          await this.updateTripWithAISuggestions(tripId, suggestions);
+          trip.hasAISuggestions = true;
+          trip.aiGeneratedAt = new Date();
+        }
       }
 
-      const suggestions = await TripAIService.generateTripSuggestion(
-        {
-          ...rest,
-          origin: origin || undefined,
-          destination: destination,
-        },
-        trip,
-      );
-
-      console.log('suggestions', suggestions);
-      if (!suggestions) {
-        throw new Error('Failed to generate AI suggestions');
-      }
-
-      await this.updateTripWithAISuggestions(tripId, suggestions);
-      trip.hasAISuggestions = true;
-      trip.aiGeneratedAt = new Date();
+      return trip;
+    } catch (error) {
+      console.error('❌ getTripWithDetails error:', error);
+      throw error;
     }
-
-    return trip;
   }
 
   static async updateTripWithAISuggestions(
     tripId: string,
     suggestions: AITripSuggestion,
-  ): Promise<TripWithDetails> {
+  ): Promise<TripWithDetails | null> {
     return db.$transaction(async (tx) => {
-      // Update trip status
       await tx.trip.update({
         where: { id: tripId },
         data: {
@@ -236,49 +256,85 @@ export class TripService {
         },
       });
 
-      // Create recommendations
-      await tx.tripRecommendation.createMany({
-        data: suggestions.recommendations.map((rec) => ({
-          tripId,
-          title: rec.title,
-          description: rec.description,
-          category: rec.category as RecommendationCategory,
-          priority: rec.priority as RecommendationPriority,
-          status: 'PENDING' as RecommendationStatus,
-        })),
-      });
+      if (suggestions.budget) {
+        await tx.budget.upsert({
+          where: { tripId },
+          update: suggestions.budget,
+          create: {
+            ...suggestions.budget,
+            tripId,
+          },
+        });
+      }
 
-      // Create itineraries with activities
+      if (suggestions.recommendations?.length) {
+        await tx.tripRecommendation.createMany({
+          data: suggestions.recommendations.map((rec) => ({
+            tripId,
+            title: rec.title,
+            description: rec.description,
+            category: rec.category as RecommendationCategory,
+            priority: rec.priority as RecommendationPriority,
+            status: 'PENDING' as RecommendationStatus,
+          })),
+        });
+      }
+
       for (const day of suggestions.itinerary) {
         const itinerary = await tx.itinerary.create({
           data: {
             tripId,
             day: day.day,
             date: day.date ? new Date(day.date) : new Date(),
-            weatherNote: day.weatherNote,
-            tips: day.tips,
+            weatherNote: day.weatherNote || null,
+            tips: day.tips || [],
           },
         });
 
-        await tx.activity.createMany({
-          data: day.activities.map((activity) => ({
-            itineraryId: itinerary.id,
-            title: activity.title,
-            description: activity.description,
-            startTime: activity.startTime,
-            endTime: activity.endTime,
-            location: activity.location,
-            lat: activity.lat,
-            lng: activity.lng,
-            cost: activity.cost,
-            status: 'PENDING',
-            type: activity.type,
-            timeSlot: activity.timeSlot,
-          })),
-        });
+        if (day.activities?.length) {
+          await tx.activity.createMany({
+            data: day.activities.map((activity) => ({
+              itineraryId: itinerary.id,
+              title: activity.title,
+              description: activity.description,
+              startTime: activity.startTime,
+              endTime: activity.endTime,
+              location: activity.location,
+              lat: activity.lat,
+              lng: activity.lng,
+              cost: activity.cost,
+              rating: 0,
+              feedback: null,
+              status: 'PENDING',
+              type: activity.type || 'ATTRACTION',
+              timeSlot: activity.timeSlot || 'MORNING',
+            })),
+          });
+        }
       }
 
-      return this.getTripWithDetails(tripId, false);
+      return tx.trip.findUnique({
+        where: { id: tripId },
+        include: {
+          preferences: true,
+          budget: true,
+          itineraries: {
+            include: {
+              activities: {
+                include: {
+                  attachments: true,
+                },
+              },
+            },
+          },
+          recommendations: true,
+          chatSessions: {
+            include: {
+              messages: true,
+            },
+          },
+        },
+      });
     });
   }
 

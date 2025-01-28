@@ -81,15 +81,17 @@ export async function getUserTrips() {
 
 export async function getTripWithDetails(tripId: string) {
   try {
+    if (!tripId) return { error: 'Trip ID is required' };
+
     const user = await currentUser();
     if (!user || !user.id) return { error: 'Unauthorized' };
 
     const trip = await TripService.getTripWithDetails(tripId);
+
     if (!trip) return { error: 'Trip not found' };
 
     return { success: 'Trip fetched successfully', data: trip };
   } catch (error) {
-    console.log('error', error);
     return { error: 'Failed to fetch trip' };
   }
 }
@@ -104,6 +106,15 @@ export async function generateTripSuggestions(
     const trip = await TripService.getUserTrip(user.id, tripId);
     if (!trip) return { error: 'Trip not found' };
     console.log('trip', trip);
+    const test = await TripAIService.processChatMessage(tripId, [
+      {
+        role: 'user',
+        content: JSON.stringify(data.preferences),
+      },
+    ]);
+
+    console.log('test', test);
+
     const suggestions = await TripAIService.generateTripSuggestion(
       data.preferences,
       trip,
