@@ -7,7 +7,6 @@ import {
   Camera,
   Utensils,
 } from 'lucide-react';
-import Layout from '../components/layout';
 import PersonalizedRecommendations from '@/components/personalized-recommendations';
 import DestinationCard from '@/components/destination-card';
 import UserGeneratedContent from '@/components/user-generated-content';
@@ -88,7 +87,7 @@ export default function Explore() {
   const filteredDestinations = featuredDestinations;
 
   return (
-    <Layout>
+    <>
       <section className="py-12 bg-gray-100">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
@@ -191,6 +190,6 @@ export default function Explore() {
           </Link>
         </div>
       </section>
-    </Layout>
+    </>
   );
 }

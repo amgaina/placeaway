@@ -1,12 +1,16 @@
 import { PrismaClient, UserRole } from '@prisma/client';
-import { hash } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+const SALT_ROUNDS = 10;
 
 async function main() {
   try {
-    // Create admin user
-    const adminPassword = await hash('Admin@123456', 12);
+    // Clear existing users
+    await prisma.user.deleteMany();
+
+    // Create admin user with proper salt rounds
+    const adminPassword = await bcrypt.hash('Admin@123456', SALT_ROUNDS);
     await prisma.user.upsert({
       where: { email: 'admin@placeaway.com' },
       update: {},
@@ -19,8 +23,8 @@ async function main() {
       },
     });
 
-    // Create regular users with strong passwords
-    const userPassword = await hash('User@123456', 12);
+    // Create regular users
+    const userPassword = await bcrypt.hash('User@123456', SALT_ROUNDS);
     const users = [
       {
         email: 'john.doe@example.com',
@@ -30,11 +34,6 @@ async function main() {
       {
         email: 'jane.smith@example.com',
         name: 'Jane Smith',
-        password: userPassword,
-      },
-      {
-        email: 'robert.wilson@example.com',
-        name: 'Robert Wilson',
         password: userPassword,
       },
     ];
@@ -51,18 +50,35 @@ async function main() {
       });
     }
 
-    console.log('Database seeded successfully');
+    // Create test user with simple password
+    const hashedPassword = await bcrypt.hash('password123', 10);
+    const testUser = await prisma.user.create({
+      data: {
+        email: 'test@test.com',
+        name: 'Test User',
+        password: hashedPassword,
+        emailVerified: new Date(),
+        role: UserRole.USER,
+      },
+    });
+
+    console.log('Created test user:', {
+      email: testUser.email,
+      password: 'password123', // Plain password for testing
+    });
+
+    console.log('✅ Database seeded successfully');
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('❌ Error seeding database:', error);
+    throw error;
   }
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

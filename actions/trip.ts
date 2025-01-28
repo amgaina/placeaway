@@ -71,9 +71,8 @@ export async function getUserTrips() {
     const user = await currentUser();
     if (!user?.id) return { error: 'Unauthorized' };
     console.log('user', user);
-    const res = await getLatLangFromAddress('New York');
-    console.log('lcoaiton api', res);
     const trips = await TripService.getUserTrips(user.id);
+    console.log('trips', trips);
     return { success: 'Trips fetched successfully', data: trips };
   } catch (error) {
     return { error: 'Failed to fetch trips' };

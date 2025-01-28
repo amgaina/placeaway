@@ -9,7 +9,6 @@ import {
   Star,
 } from 'lucide-react';
 import Link from 'next/link';
-import Layout from '../../components/layout';
 import ExpandableDescription from '@/components/expandabledescription';
 
 const destinations = {
@@ -50,7 +49,7 @@ export default async function Page({
   }
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -159,7 +158,7 @@ export default async function Page({
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
 
