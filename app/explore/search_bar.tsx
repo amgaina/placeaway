@@ -24,7 +24,7 @@ const Search_bar = () => {
         setPredictions([]);
         return;
       }
-      const predictions = await autocomplete(input);
+      const predictions = await autocomplete('USA');
       setPredictions(predictions || []);
     };
     fetchPredictions();
@@ -33,7 +33,7 @@ const Search_bar = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() !== '') {
-      router.push(`/booking/${encodeURIComponent(input)}`);
+      router.push(`/destination/${encodeURIComponent(input)}`);
     }
   };
 
@@ -57,7 +57,7 @@ const Search_bar = () => {
                   onSelect={() => {
                     setInput(prediction.description);
                     router.push(
-                      `/booking/${encodeURIComponent(prediction.description)}`,
+                      `/destination/${encodeURIComponent(prediction.description)}`,
                     );
                   }}
                   className="p-3 hover:bg-gray-100 cursor-pointer"

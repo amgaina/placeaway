@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import Layout from '../../components/layout';
 import ExpandableDescription from '@/components/expandabledescription';
+import LocationComponent from '@/components/LocationComponent';
 
 const destinations = {
   bali: {
@@ -62,7 +63,9 @@ export default async function Page({
                 <div className="mb-8 flex items-center">
                   <div className="flex-1 flex items-center">
                     <MapPin className="text-red-500 mr-2" />
-                    <span className="font-semibold">Monroe, LA</span>
+                    <span className="font-semibold">
+                      <LocationComponent />
+                    </span>
                   </div>
                   <ArrowRight className="text-gray-400 mx-4" />
                   <div className="flex-1 flex items-center">
