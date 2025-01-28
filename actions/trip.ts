@@ -71,9 +71,8 @@ export async function getUserTrips() {
     const user = await currentUser();
     if (!user?.id) return { error: 'Unauthorized' };
     console.log('user', user);
-    const res = await getLatLangFromAddress('New York');
-    console.log('lcoaiton api', res);
     const trips = await TripService.getUserTrips(user.id);
+    console.log('trips', trips);
     return { success: 'Trips fetched successfully', data: trips };
   } catch (error) {
     return { error: 'Failed to fetch trips' };
@@ -82,14 +81,17 @@ export async function getUserTrips() {
 
 export async function getTripWithDetails(tripId: string) {
   try {
+    if (!tripId) return { error: 'Trip ID is required' };
+
     const user = await currentUser();
     if (!user || !user.id) return { error: 'Unauthorized' };
 
     const trip = await TripService.getTripWithDetails(tripId);
 
+    if (!trip) return { error: 'Trip not found' };
+
     return { success: 'Trip fetched successfully', data: trip };
   } catch (error) {
-    console.log('error', error);
     return { error: 'Failed to fetch trip' };
   }
 }
@@ -101,9 +103,21 @@ export async function generateTripSuggestions(
   try {
     const user = await currentUser();
     if (!user || !user.id) return { error: 'Unauthorized' };
+    const trip = await TripService.getUserTrip(user.id, tripId);
+    if (!trip) return { error: 'Trip not found' };
+    console.log('trip', trip);
+    const test = await TripAIService.processChatMessage(tripId, [
+      {
+        role: 'user',
+        content: JSON.stringify(data.preferences),
+      },
+    ]);
+
+    console.log('test', test);
 
     const suggestions = await TripAIService.generateTripSuggestion(
       data.preferences,
+      trip,
     );
 
     console.log('suggestions', suggestions);
@@ -130,12 +144,15 @@ export async function updateTripPreferences(
     if (!user?.id) return { error: 'Unauthorized' };
 
     // Set hasAISuggestions to false
-    await TripService.updateTrip(tripId, values, true);
+    const trip = await TripService.updateTrip(tripId, values, true);
 
     // Generate new AI suggestions
     const suggestions = await TripAIService.generateTripSuggestion(
       values.preferences,
+      trip,
     );
+
+    console.log('suggestions', suggestions);
 
     if (!suggestions) {
       return { error: 'Failed to generate AI suggestions' };

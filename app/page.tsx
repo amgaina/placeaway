@@ -13,7 +13,6 @@ import {
   Building,
   Briefcase,
 } from 'lucide-react';
-import Layout from './components/layout';
 import Carousel from './components/Carousel/page';
 import Features from './components/features/page';
 import 'slick-carousel/slick/slick.css';
@@ -36,7 +35,8 @@ import BookingPolicy from '@/components/booking-policy';
 
 export default function Home() {
   return (
-    <Layout>
+    <>
+      {' '}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <Carousel />
@@ -65,11 +65,9 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="relative py-16 bg-gray-100 overflow-hidden">
         <Features />
       </section>
-
       <section className="relative py-16 bg-gray-100 overflow-hidden">
         <AbstractShapes className="text-teal-200 opacity-30 top-0 right-0" />
         <div className="container mx-auto px-4">
@@ -128,7 +126,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="relative py-16 overflow-hidden">
         <AbstractLines className="text-blue-100 opacity-20 bottom-0 right-0" />
         <div className="container mx-auto px-4">
@@ -175,7 +172,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="relative py-16 bg-gradient-to-r from-blue-500 to-teal-500 text-white overflow-hidden">
         <AbstractShapes className="text-white opacity-10 top-0 left-0" />
         <div className="container mx-auto px-4">
@@ -252,7 +248,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <section className="relative py-16 overflow-hidden">
         <AbstractLines className="text-blue-100 opacity-20 top-0 right-0" />
         <div className="container mx-auto px-4">
@@ -300,9 +295,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <SubscriptionPlans />
-
       <section className="py-16 bg-gradient-to-r from-sky-500 to-amber-500 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
@@ -317,7 +310,6 @@ export default function Home() {
           </button>
         </div>
       </section>
-
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center">
@@ -359,9 +351,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       <BookingPolicy />
-
       <section className="py-12 bg-gradient-to-r from-sky-500 to-amber-500 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
@@ -378,6 +368,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-    </Layout>
+    </>
   );
 }

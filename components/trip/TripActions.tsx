@@ -1,6 +1,7 @@
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -44,6 +45,8 @@ export function TripActions({ tripId }: { tripId: string }) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+
           <Button onClick={handleDelete} variant="destructive">
             Delete
           </Button>

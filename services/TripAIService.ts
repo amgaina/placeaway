@@ -2,10 +2,26 @@ import { OpenAI } from 'openai';
 import {
   AIMessage,
   AITripSuggestionSchema,
+  RecommendationCategory,
   TripPreferenceInput,
 } from '@/schemas/trip';
 import { z } from 'zod';
 import { Client } from '@googlemaps/google-maps-services-js';
+import {
+  RecommendationPriority,
+  RecommendationStatus,
+  Trip,
+} from '@prisma/client';
+import {
+  AITripSuggestion,
+  AIActivity,
+  AIItineraryDay,
+  AILocation,
+} from '@/types/ai';
+import { TripWithDetails } from '@/types/trip';
+import { db } from '@/lib/db';
+import { TripService } from './TripService';
+import { differenceInDays, format } from 'date-fns';
 
 export default class TripAIService {
   private static openai = new OpenAI({
@@ -16,81 +32,86 @@ export default class TripAIService {
   private static readonly DATE_FORMAT = 'yyyy-MM-dd';
   private static readonly TIME_FORMAT = 'HH:mm:ss';
 
-  private static readonly SYSTEM_PROMPT = `You are an expert travel planning assistant. Generate trip plans in JSON format.
-
-NOTES:
-- All dates must be in ISO format (${this.DATE_FORMAT})
-- All times must be in 24-hour format (${this.TIME_FORMAT})
-- All activities must include complete details
-- All costs must be in numbers
-- Recommendations must include category and priority
-
-EXAMPLE JSON OUTPUT:
-{
-  "destination": "Paris",
-  "activities": [
-    {
-      "title": "Louvre Museum Tour",
-      "description": "Guided tour of key artworks",
-      "startTime": "2024-03-20T09:00:00Z",
-      "endTime": "2024-03-20T12:00:00Z",
-      "location": "Louvre Museum",
-      "cost": 25
-    }
-  ],
-  "budget": {
-    "accommodation": 200,
-    "transport": 50,
-    "activities": 100,
-    "food": 80,
-    "other": 30
-  },
-  "recommendations": [
-    {
-      "title": "Purchase Paris Museum Pass",
-      "description": "Save money on multiple museum visits with the Paris Museum Pass",
-      "category": "ACTIVITIES",
-      "priority": "HIGH"
+  private static readonly SYSTEM_PROMPT = `Generate travel itinerary JSON:
+  {
+    "destination": string,
+    "budget": {
+      "total": number,
+      "accommodation": number,
+      "transport": number,
+      "activities": number,
+      "food": number,
+      "other": number
     },
-    {
-      "title": "Book Accommodation in Le Marais",
-      "description": "Central location with easy access to major attractions",
-      "category": "ACCOMMODATION",
-      "priority": "MEDIUM"
-    }
-  ],
-  "itinerary": [
-    {
-      "day": 1,
-      "activities": [
-        {
-          "title": "Louvre Museum Tour",
-          "description": "Guided tour of key artworks",
-          "startTime": "2024-03-20T09:00:00Z",
-          "endTime": "2024-03-20T12:00:00Z",
-          "location": "Louvre Museum",
-          "cost": 25
-        }
-      ],
-      "date": "2024-03-20"
-    }
-  ]
-}`;
+    "recommendations": [{
+      "title": string (max 50 chars),
+      "description": string (max 200 chars),
+      "category": enum("TRANSPORT","ACCOMMODATION","FOOD","ACTIVITIES","SAFETY","GENERAL","OTHER"),
+      "priority": enum("LOW","MEDIUM","HIGH"),
+      "status": "PENDING"
+    }],
+    "itinerary": [{
+      "day": number,
+      "date": string (YYYY-MM-DD),
+      "weatherNote": string?,
+      "tips": string[],
+      "activities": [{
+        "title": string (max 50 chars),
+        "description": string (max 200 chars),
+        "startTime": string (ISO),
+        "endTime": string (ISO),
+        "location": string,
+        "lat": number?,
+        "lng": number?,
+        "cost": number,
+        "rating": number,
+        "feedback": string?,
+        "status": enum("PENDING","APPROVED","REJECTED","COMPLETED"),
+        "type": enum("ATTRACTION","MEAL","TRANSPORT","BREAK","ACCOMMODATION"),
+        "timeSlot": enum("MORNING","AFTERNOON","EVENING")
+      }]
+    }]
+  }
 
-  private static readonly TIMEOUT = 60000; // 1 minute
-  private static readonly MAX_RETRIES = 3;
-  private static readonly RETRY_DELAY = 1000; // 1 second
+  Rules:
+  - Min 3 recommendations
+  - Activities across all timeSlots (MORNING, AFTERNOON, EVENING)
+  - Max 3 days itinerary if trip > 3 days, else all days
+  - 1 tip per day
+  - All costs in numbers
+  - All dates in ISO format
+  - All enums must match exactly`;
+
+  private static readonly MAX_RETRIES = 1;
 
   private static geocoder = new Client({});
 
+  private static readonly DEBUG = process.env.NODE_ENV === 'development';
+
+  private static log(message: string, data?: any) {
+    if (this.DEBUG) {
+      console.log(
+        `[TripAI] ${message}`,
+        data ? JSON.stringify(data, null, 2) : '',
+      );
+    }
+  }
+
   public static async getCoordinates(location: string) {
+    this.log('Getting coordinates for:', location);
     try {
+      const startTime = Date.now();
       const response = await this.geocoder.geocode({
         params: {
           address: location,
           key: process.env.GOOGLE_MAPS_API_KEY!,
         },
       });
+      this.log('Geocoding response time:', `${Date.now() - startTime}ms`);
+      this.log(
+        'Geocoding response:',
+        response.data.results[0]?.geometry?.location,
+      );
 
       if (response.data.results[0]) {
         return {
@@ -100,7 +121,7 @@ EXAMPLE JSON OUTPUT:
       }
       return null;
     } catch (error) {
-      console.error('Geocoding error:', error);
+      this.log('Geocoding error:', error);
       return null;
     }
   }
@@ -115,130 +136,251 @@ EXAMPLE JSON OUTPUT:
     }
   }
 
-  private static async transformAIResponse(
-    response: any,
-  ): Promise<z.infer<typeof AITripSuggestionSchema>> {
-    // Transform activities with coordinates
-    const activitiesWithCoordinates = await Promise.all(
-      response.activities.map(async (activity: any) => {
-        const coordinates = activity.location
-          ? await this.getCoordinates(activity.location)
-          : null;
-        return {
-          ...activity,
-          lat: coordinates?.lat || null,
-          lng: coordinates?.lng || null,
-          startTime: this.parseDateTime(activity.startTime),
-          endTime: this.parseDateTime(activity.endTime),
-        };
-      }),
-    );
+  static async transformActivityWithCoordinates(
+    activity: AIActivity,
+  ): Promise<AIActivity> {
+    try {
+      const coordinates: AILocation | null = activity.location
+        ? await this.getCoordinates(activity.location)
+        : null;
 
-    console.log(activitiesWithCoordinates);
+      return {
+        title: activity.title,
+        description: activity.description ?? null,
+        startTime:
+          this.parseDateTime(activity.startTime ?? null)?.toISOString() ?? null,
+        endTime:
+          this.parseDateTime(activity.endTime ?? null)?.toISOString() ?? null,
+        location: activity.location ?? null,
+        lat: coordinates?.lat ?? null,
+        lng: coordinates?.lng ?? null,
+        cost: activity.cost ?? null,
+        type: activity.type || 'ATTRACTION',
+        timeSlot: activity.timeSlot || 'MORNING',
+        status: 'PENDING',
+        rating: 0,
+        feedback: null,
+      };
+    } catch (error) {
+      console.error('Activity transform error:', error);
+      throw new Error(`Failed to transform activity: ${activity.title}`);
+    }
+  }
 
-    // Transform itinerary activities with coordinates
-    const itineraryWithCoordinates = await Promise.all(
-      response.itinerary.map(async (day: any) => ({
-        ...day,
-        date: this.parseDateTime(day.date),
-        activities: await Promise.all(
-          day.activities.map(async (activity: any) => {
-            if (typeof activity === 'string') {
-              return {
-                title: activity,
-                description: '',
-                location: '',
-                cost: 0,
-                startTime: null,
-                endTime: null,
-                lat: null,
-                lng: null,
-              };
-            }
+  static async transformAIResponse(response: any): Promise<AITripSuggestion> {
+    try {
+      if (!response || typeof response !== 'object') {
+        throw new Error('Invalid AI response format');
+      }
 
-            const coordinates = activity.location
-              ? await this.getCoordinates(activity.location)
-              : null;
-
-            return {
-              ...activity,
-              lat: coordinates?.lat || null,
-              lng: coordinates?.lng || null,
-              startTime: this.parseDateTime(activity.startTime),
-              endTime: this.parseDateTime(activity.endTime),
-            };
-          }),
+      const activities = await Promise.all(
+        (response.activities || []).map(
+          this.transformActivityWithCoordinates.bind(this),
         ),
-      })),
-    );
+      );
 
-    return {
-      destination: response.destination,
-      activities: activitiesWithCoordinates,
-      budget: response.budget,
-      recommendations: response.recommendations.map((rec: any) => ({
-        title: rec.title || '',
-        description: rec.description || '',
-        category: rec.category || 'GENERAL',
-        priority: rec.priority || 'MEDIUM',
-      })),
-      itinerary: itineraryWithCoordinates,
-    };
+      const itinerary = await Promise.all(
+        (response.itinerary || []).map(async (day: AIItineraryDay) => ({
+          day: day.day,
+          date: day.date,
+          weatherNote: day.weatherNote ?? null,
+          tips: Array.isArray(day.tips) ? day.tips : [],
+          activities: await Promise.all(
+            (day.activities || []).map(
+              this.transformActivityWithCoordinates.bind(this),
+            ),
+          ),
+        })),
+      );
+
+      return {
+        destination: response.destination || '',
+        activities,
+        budget: {
+          total: Number(response.budget?.total) || 0,
+          accommodation: Number(response.budget?.accommodation) || 0,
+          transport: Number(response.budget?.transport) || 0,
+          activities: Number(response.budget?.activities) || 0,
+          food: Number(response.budget?.food) || 0,
+          other: Number(response.budget?.other) || 0,
+        },
+        recommendations: (response.recommendations || []).map((rec: any) => ({
+          title: rec?.title || 'Untitled',
+          description: rec?.description || '',
+          category: rec?.category || 'GENERAL',
+          priority: rec?.priority || 'MEDIUM',
+        })),
+        itinerary,
+      };
+    } catch (error) {
+      console.error('Transform error:', error);
+      throw new Error('Failed to transform AI response');
+    }
+  }
+
+  static async updateTripWithAISuggestions(
+    tripId: string,
+    suggestions: AITripSuggestion,
+  ): Promise<TripWithDetails> {
+    return db.$transaction(async (tx) => {
+      // Update trip status
+      await tx.trip.update({
+        where: { id: tripId },
+        data: {
+          hasAISuggestions: true,
+          aiGeneratedAt: new Date(),
+        },
+      });
+
+      // Create recommendations if they exist
+      if (suggestions.recommendations?.length) {
+        await tx.tripRecommendation.createMany({
+          data: suggestions.recommendations.map((rec) => ({
+            tripId,
+            title: rec.title || 'Untitled',
+            description: rec.description || '',
+            category: (rec.category as RecommendationCategory) || 'GENERAL',
+            priority: (rec.priority as RecommendationPriority) || 'MEDIUM',
+            status: 'PENDING' as RecommendationStatus,
+          })),
+        });
+      }
+
+      // Create itineraries with activities
+      if (suggestions.itinerary?.length) {
+        for (const day of suggestions.itinerary) {
+          const itinerary = await tx.itinerary.create({
+            data: {
+              tripId,
+              day: day.day,
+              date: day.date ? new Date(day.date) : new Date(),
+              weatherNote: day.weatherNote || null,
+              tips: day.tips || [],
+            },
+          });
+
+          if (day.activities?.length) {
+            await tx.activity.createMany({
+              data: day.activities.map((activity) => ({
+                itineraryId: itinerary.id,
+                title: activity.title,
+                description: activity.description || null,
+                startTime: activity.startTime || null,
+                endTime: activity.endTime || null,
+                location: activity.location || null,
+                lat: activity.lat || null,
+                lng: activity.lng || null,
+                cost: activity.cost || null,
+                status: 'PENDING',
+                type: activity.type || 'ATTRACTION',
+                timeSlot: activity.timeSlot || 'MORNING',
+              })),
+            });
+          }
+        }
+      }
+
+      const trip = await TripService.getTripWithDetails(tripId);
+      if (!trip) throw new Error('Failed to update trip with AI suggestions');
+      return trip;
+    });
+  }
+
+  private static buildPrompt(
+    preferences: TripPreferenceInput['preferences'],
+    trip: Trip,
+  ): string {
+    const tripDuration =
+      trip.endDate && trip.startDate
+        ? differenceInDays(
+            trip.endDate ?? new Date(),
+            trip.startDate ?? new Date(),
+          )
+        : 7;
+
+    return `Create a ${tripDuration}-day trip itinerary as a JSON object for:
+
+Location Details:
+- Destination: ${preferences.destination}
+- Starting from: ${preferences.origin || 'Not specified'}
+- Trip dates: ${format(trip.startDate ?? new Date(), 'PPP')} to ${format(trip.endDate ?? new Date(), 'PPP')}
+
+Group Details:
+- Size: ${preferences.visitorCount} people
+- Type: ${preferences.hasChildren ? 'Family with children' : 'Adults only'}
+${preferences.hasPets ? '- Special: Traveling with pets' : ''}
+
+
+Interests:
+${preferences.interests.map((interest) => `- ${interest}`).join('\n')}
+
+
+Special Requirements:
+${preferences.hasPets ? '- Pets: Please include pet-friendly activities' : ''}
+${preferences.hasChildren ? '- Children: Include family-friendly activities' : ''}
+
+}`;
+  }
+
+  private static readonly MAX_RESPONSE_SIZE = 10000;
+
+  private static cleanAndValidateJSON(content: string): string {
+    // Remove any trailing characters
+    let cleaned = content.trim();
+
+    // Validate JSON structure
+    try {
+      cleaned = JSON.parse(cleaned);
+      return cleaned;
+    } catch (e) {
+      throw new Error('Invalid JSON structure');
+    }
   }
 
   static async generateTripSuggestion(
     preferences: TripPreferenceInput['preferences'],
+    trip: Trip,
   ) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.TIMEOUT);
     let retries = 0;
 
     while (retries < this.MAX_RETRIES) {
       try {
+        this.log('Generating trip suggestion:', preferences);
         const completion = await this.openai.chat.completions.create(
           {
             model: 'deepseek-chat',
             messages: [
               { role: 'system', content: this.SYSTEM_PROMPT },
-              {
-                role: 'user',
-                content: `Generate a comprehensive trip plan in JSON format for:
-Destination: ${preferences.destination || 'to be suggested'}
-Visitors: ${preferences.visitorCount}
-Has Children: ${preferences.hasChildren ? 'Yes' : 'No'}
-Has Pets: ${preferences.hasPets ? 'Yes' : 'No'}
-Interests: ${preferences.interests.join(', ')}
-${preferences.origin ? `Starting from: ${preferences.origin}` : ''}`,
-              },
+              { role: 'user', content: this.buildPrompt(preferences, trip) },
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.7,
-            max_tokens: 4000,
+            temperature: 0.6,
+            max_tokens: 6000, // Reduced to prevent truncation
           },
-          {
-            signal: controller.signal,
-          },
+          { signal: controller.signal },
         );
 
-        clearTimeout(timeoutId);
+        console.log('completion', completion);
         const content = completion.choices[0].message.content;
         if (!content) throw new Error('Empty response from AI');
 
-        const suggestion = JSON.parse(content);
+        const suggestion = this.cleanAndValidateJSON(content);
+        this.log('AI suggestion:', suggestion);
+
         const transformed = await this.transformAIResponse(suggestion);
-        return AITripSuggestionSchema.parse(transformed);
+        return transformed;
       } catch (error) {
         console.error('Failed to generate trip suggestion:', error);
         retries++;
         if (error instanceof Error && error.name === 'AbortError') {
           throw new Error('AI generation timed out. Please try again.');
         }
-        if (retries === this.MAX_RETRIES) throw error;
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.RETRY_DELAY * Math.pow(2, retries)),
-        );
+        if (retries === this.MAX_RETRIES) return null;
+        await new Promise((resolve) => setTimeout(resolve, 1000 * retries));
       }
     }
+    return null;
   }
 
   static async processChatMessage(

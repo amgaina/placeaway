@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { TripWithPreferencesAndBudgetAndTripRecommendation } from '@/schemas/trip';
+import {
+  TripPreferenceSchema,
+  TripWithPreferencesAndBudgetAndTripRecommendation,
+} from '@/schemas/trip';
 import { TravelOverview } from '@/components/trip/TravelOverview';
 import { BudgetTracker } from '@/components/trip/BudgetTracker';
 import { ItineraryView } from '@/components/trip/ItineraryView';
@@ -21,33 +24,53 @@ import { Progress } from '@/components/ui/progress';
 import { PreferencesForm } from '@/components/trip/PreferencesForm';
 import { TripHeader } from '@/components/trip/TripHeader';
 import { TripActions } from '@/components/trip/TripActions';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import {
+  ActivityWithLocation,
+  ItineraryWithActivities,
+} from '@/types/activity';
+import {
+  Budget,
+  Trip,
+  TripPreference,
+  TripRecommendation,
+} from '@prisma/client';
+import { TripWithDetails } from '@/types/trip';
+
+interface TripData extends Omit<Trip, 'itineraries'> {
+  preferences: TripPreference | null;
+  budget: Budget | null;
+  recommendations: TripRecommendation[];
+  itineraries: ItineraryWithActivities[];
+}
 
 const loadingSteps = [
   {
     id: 1,
-    title: 'Loading Trip Data',
-    description: 'Fetching your travel information',
-    icon: <FaDatabase className="w-6 h-6" />,
+    title: 'Fetching Trip Details',
+    description: 'Loading your trip information...',
+    icon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
   },
   {
     id: 2,
-    title: 'Generating AI Suggestions',
-    description: 'Creating personalized recommendations',
-    icon: <FaRobot className="w-6 h-6" />,
+    title: 'Processing Data',
+    description: 'Analyzing trip preferences and recommendations...',
+    icon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
   },
   {
     id: 3,
-    title: 'Preparing Interface',
-    description: 'Setting up your travel dashboard',
-    icon: <FaMapMarkedAlt className="w-6 h-6" />,
+    title: 'Loading Maps',
+    description: 'Preparing location data and coordinates...',
+    icon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
   },
 ];
 
 const defaultCenter = { lat: 27.7172, lng: 85.324 }; // Default coordinates (example: Kathmandu)
 
 export default function TripPage() {
-  const [tripData, setTripData] =
-    useState<TripWithPreferencesAndBudgetAndTripRecommendation | null>(null);
+  const [tripData, setTripData] = useState<TripWithDetails | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
@@ -73,7 +96,9 @@ export default function TripPage() {
           console.log(result.data);
           setIsGeneratingAI(true);
           // const transformedData = transformTripData(result.data);
-          setTripData(result.data);
+          if (result.data) {
+            setTripData(result.data);
+          }
           setSelectedPlace({
             location: {
               lat:
@@ -98,11 +123,50 @@ export default function TripPage() {
     loadTripData();
   }, [params.id]);
 
-  const handleUpdate = async (values: any) => {
-    setIsEditing(false);
+  const handleUpdate = async (values: z.infer<typeof TripPreferenceSchema>) => {
     const result = await updateTripPreferences(params.id as string, values);
+
     if (result.data) {
       setTripData(result.data);
+      if (result.success) {
+        toast.success('Trip preferences updated successfully');
+      }
+    }
+    if (result.error) {
+      toast.error(result.error);
+    }
+    setIsEditing(false);
+  };
+
+  const handleActivityUpdate = async (
+    activityId: string,
+    updates: Partial<ActivityWithLocation>,
+  ) => {
+    try {
+      const response = await fetch('/api/activity', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityId, ...updates }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update activity');
+
+      const { activity } = await response.json();
+      if (!tripData) return;
+
+      setTripData({
+        ...tripData,
+        itineraries: tripData.itineraries.map((day) => ({
+          ...day,
+          activities: day.activities.map((a) =>
+            a.id === activityId ? { ...a, ...activity } : a,
+          ),
+        })),
+      });
+
+      toast.success('Activity updated successfully');
+    } catch (error) {
+      toast.error('Failed to update activity');
     }
   };
 
@@ -112,15 +176,45 @@ export default function TripPage() {
 
   if (!tripData || isGeneratingAI) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <LoadingSteps steps={loadingSteps} currentStep={loadingStep} />
-      </div>
+      <motion.div
+        className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="w-full max-w-md space-y-8"
+          initial={{ y: 20 }}
+          animate={{ y: 0 }}
+        >
+          <Progress
+            value={(loadingStep / loadingSteps.length) * 100}
+            className="h-2"
+          />
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={loadingStep}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <LoadingSteps steps={loadingSteps} currentStep={loadingStep} />
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+      </motion.div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TripHeader trip={tripData} onEdit={() => setIsEditing(true)} />
+      <TripHeader
+        trip={tripData}
+        onEdit={(val) => setIsEditing(val)}
+        isEditing={isEditing}
+      />
 
       <div className="max-w-7xl mx-auto p-6">
         {isEditing ? (
@@ -151,11 +245,13 @@ export default function TripPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                <ItineraryView
-                  itinerary={tripData.itineraries}
-                  onPlaceSelect={setSelectedPlace}
-                />
+                {tripData.itineraries && (
+                  <ItineraryView
+                    itinerary={tripData.itineraries}
+                    onPlaceSelect={setSelectedPlace}
+                    onActivityUpdate={handleActivityUpdate}
+                  />
+                )}
 
                 {tripData.budget && <BudgetTracker budget={tripData.budget} />}
               </div>

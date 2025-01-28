@@ -26,8 +26,9 @@ import {
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import FullPageErrorView from '@/components/error/full-page-error-view';
 import { TripWithPreferencesAndBudgetAndTripRecommendation } from '@/schemas/trip';
+import { TripCardSkeleton } from '@/components/skeletons/TripCardSkeleton';
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 
 type ViewMode = 'grid' | 'list';
 type FilterStatus = 'all' | 'planning' | 'completed';
@@ -74,6 +75,7 @@ export default function TripsPage() {
 
   useEffect(() => {
     async function loadTrips() {
+      setLoading(true);
       try {
         const result = await getUserTrips();
         if (result.error) {
@@ -133,18 +135,15 @@ export default function TripsPage() {
       return dateB - dateA || 0;
     });
 
-  if (loading) {
-    return <LoadingView />;
-  }
-
   if (error) {
     return (
-      <FullPageErrorView
-        message={error}
-        title="Error"
-        onAction={() => window.location.reload()}
-        actionText="Try Again"
-      />
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="text-center space-y-4">
+          <ExclamationTriangleIcon className="w-12 h-12 text-red-500 mx-auto" />
+          <p className="text-lg font-medium text-gray-900">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
     );
   }
 
@@ -251,7 +250,19 @@ export default function TripsPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {filteredTrips.length === 0 ? (
+          {loading ? (
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'space-y-4'
+              }
+            >
+              {[...Array(6)].map((_, i) => (
+                <TripCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredTrips.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -344,17 +355,6 @@ export default function TripsPage() {
   );
 }
 
-function LoadingView() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <FaSpinner className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-primary font-medium">Loading your trips...</p>
-      </div>
-    </div>
-  );
-}
-
 function EmptyState({ query }: { query: string }) {
   return (
     <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -368,9 +368,15 @@ function EmptyState({ query }: { query: string }) {
             ? `No trips found for "${query}"`
             : 'Start planning your next adventure!'}
         </p>
-        <Link href="/plan" className="bg-primary">
-          Plan Your First Trip
-        </Link>
+        <Button
+          asChild
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          <Link href="/plan">
+            <Plus className="w-4 h-4 mr-2" />
+            Plan Your First Trip
+          </Link>
+        </Button>
       </div>
     </div>
   );

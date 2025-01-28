@@ -5,9 +5,11 @@ import { currentUser } from '@/lib/auth';
 import { ChatMessageSchema, TripPreferenceSchema } from '@/schemas/trip';
 import { ChatService } from '@/services/ChatService';
 import TripAIService from '@/services/TripAIService';
+import { Trip } from '@prisma/client';
 
 export const generateTripSuggestion = async (
   values: z.infer<typeof TripPreferenceSchema>,
+  trip: Trip,
 ) => {
   try {
     const user = await currentUser();
@@ -18,7 +20,9 @@ export const generateTripSuggestion = async (
 
     const suggestion = await TripAIService.generateTripSuggestion(
       values.preferences,
+      trip,
     );
+
     return { success: 'Suggestion generated', data: suggestion };
   } catch (error) {
     return { error: 'Failed to generate suggestion' };
