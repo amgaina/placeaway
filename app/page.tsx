@@ -18,7 +18,6 @@ import Carousel from './components/Carousel/page';
 import Features from './components/features/page';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import LocationComponent from '@/components/LocationComponent';
 
 import { Input } from '@/components/ui/input';
 import {
@@ -48,7 +47,6 @@ export default function Home() {
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
             Your Journey, Your Way
           </h1>
-          <LocationComponent />
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Experience unparalleled flexibility with Placeaway AI-powered travel
             planning and customizable packages.
