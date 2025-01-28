@@ -355,17 +355,6 @@ export default function TripsPage() {
   );
 }
 
-function LoadingView() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-4">
-        <FaSpinner className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-primary font-medium">Loading your trips...</p>
-      </div>
-    </div>
-  );
-}
-
 function EmptyState({ query }: { query: string }) {
   return (
     <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -379,9 +368,15 @@ function EmptyState({ query }: { query: string }) {
             ? `No trips found for "${query}"`
             : 'Start planning your next adventure!'}
         </p>
-        <Link href="/plan" className="bg-primary">
-          Plan Your First Trip
-        </Link>
+        <Button
+          asChild
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          <Link href="/plan">
+            <Plus className="w-4 h-4 mr-2" />
+            Plan Your First Trip
+          </Link>
+        </Button>
       </div>
     </div>
   );
