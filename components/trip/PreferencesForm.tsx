@@ -26,7 +26,6 @@ import {
   TripPreferenceSchema,
   TripWithPreferencesAndBudgetAndTripRecommendation,
 } from '@/schemas/trip';
-import { Trip } from '@prisma/client';
 import { z } from 'zod';
 
 const interests = [

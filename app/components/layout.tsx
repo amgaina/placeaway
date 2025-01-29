@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { MountainSnow } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { currentUser } from '@/lib/auth';
 
 export default async function Layout({
   children,

@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import {
-  TripPreferenceSchema,
-  TripWithPreferencesAndBudgetAndTripRecommendation,
-} from '@/schemas/trip';
+import { TripPreferenceSchema } from '@/schemas/trip';
 import { TravelOverview } from '@/components/trip/TravelOverview';
 import { BudgetTracker } from '@/components/trip/BudgetTracker';
 import { ItineraryView } from '@/components/trip/ItineraryView';
@@ -26,24 +23,9 @@ import { TripActions } from '@/components/trip/TripActions';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Loader2, BookOpen, Brain, Map, CheckCircle2 } from 'lucide-react';
-import {
-  ActivityWithLocation,
-  ItineraryWithActivities,
-} from '@/types/activity';
-import {
-  Budget,
-  Trip,
-  TripPreference,
-  TripRecommendation,
-} from '@prisma/client';
-import { TripWithDetails } from '@/types/trip';
+import { ActivityWithLocation } from '@/types/activity';
 
-interface TripData extends Omit<Trip, 'itineraries'> {
-  preferences: TripPreference | null;
-  budget: Budget | null;
-  recommendations: TripRecommendation[];
-  itineraries: ItineraryWithActivities[];
-}
+import { TripWithDetails } from '@/types/trip';
 
 const loadingSteps = [
   {
@@ -120,6 +102,7 @@ export default function TripPage() {
           setError('Failed to load trip data');
         }
       } catch (err) {
+        console.error('Failed to load trip data', err);
         setError('Failed to load trip data');
       } finally {
         setIsGeneratingAI(false);
@@ -172,6 +155,7 @@ export default function TripPage() {
 
       toast.success('Activity updated successfully');
     } catch (error) {
+      console.error('Failed to update activity', error);
       toast.error('Failed to update activity');
     }
   };

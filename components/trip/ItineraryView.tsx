@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ActivityCard } from '../activity/ActivityCard';
 import { Progress } from '../ui/progress';
-import { TimeSlot, ActivityStatus, Itinerary, Activity } from '@prisma/client';
+import { TimeSlot } from '@prisma/client';
 import { useState } from 'react';
 import {
   ActivityWithLocation,
@@ -107,6 +107,7 @@ export function ItineraryView({
                               }}
                               onAttachment={async (id, file) => {
                                 // Handle file upload
+                                console.log(id, file);
                               }}
                             />
                           ))}

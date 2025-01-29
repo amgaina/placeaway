@@ -37,6 +37,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ activity });
   } catch (error) {
+    console.error('Failed to fetch activity', error);
     return NextResponse.json(
       { error: 'Failed to fetch activity' },
       { status: 500 },
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ activity, attachment });
   } catch (error) {
+    console.error('Failed to upload file', error);
     return NextResponse.json(
       { error: 'Failed to upload file' },
       { status: 500 },
@@ -137,6 +139,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ activity: deletedActivity });
   } catch (error) {
+    console.error('Failed to delete activity', error);
     return NextResponse.json(
       { error: 'Failed to delete activity' },
       { status: 500 },

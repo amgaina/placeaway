@@ -2,21 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Budget } from '@prisma/client';
 import { DollarSign } from 'lucide-react';
-import { Calendar, Edit2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { deleteTrip } from '@/actions/trip';
 
 export function BudgetTracker({ budget }: { budget: Budget }) {
   const total = budget.total;

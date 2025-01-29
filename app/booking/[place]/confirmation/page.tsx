@@ -2,8 +2,7 @@
 
 import { JSX, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createTrip, generateTripSuggestions } from '@/actions/trip';
-import { generateTripSuggestion } from '@/actions/ai';
+import { createTrip } from '@/actions/trip';
 import { motion } from 'framer-motion';
 import {
   FaSpinner,
@@ -12,7 +11,6 @@ import {
   FaRobot,
   FaMapMarkedAlt,
 } from 'react-icons/fa';
-import { toast } from 'sonner';
 import { z } from 'zod';
 import { TripPreferenceSchema } from '@/schemas/trip';
 import FullPageErrorView from '@/components/error/full-page-error-view';

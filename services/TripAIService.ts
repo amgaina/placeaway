@@ -1,11 +1,9 @@
 import { OpenAI } from 'openai';
 import {
   AIMessage,
-  AITripSuggestionSchema,
   RecommendationCategory,
   TripPreferenceInput,
 } from '@/schemas/trip';
-import { z } from 'zod';
 import { Client } from '@googlemaps/google-maps-services-js';
 import {
   RecommendationPriority,
@@ -13,12 +11,7 @@ import {
   Trip,
   ActivityType,
 } from '@prisma/client';
-import {
-  AITripSuggestion,
-  AIActivity,
-  AIItineraryDay,
-  AILocation,
-} from '@/types/ai';
+import { AITripSuggestion, AIActivity, AIItineraryDay } from '@/types/ai';
 import { TripWithDetails } from '@/types/trip';
 import { db } from '@/lib/db';
 import { TripService } from './TripService';
@@ -29,9 +22,6 @@ export default class TripAIService {
     baseURL: 'https://api.deepseek.com',
     apiKey: process.env.DEEPSEEK_API_KEY,
   });
-
-  private static readonly DATE_FORMAT = 'yyyy-MM-dd';
-  private static readonly TIME_FORMAT = 'HH:mm:ss';
 
   private static readonly SYSTEM_PROMPT = `Generate a structured travel itinerary in valid JSON format based on the following schema. Ensure all values adhere to the specified constraints.
 
@@ -328,8 +318,6 @@ Special Requirements:
 ${preferences.hasPets ? '- Pets: Please include pet-friendly activities' : ''}
 ${preferences.hasChildren ? '- Children: Include family-friendly activities' : ''}`;
   }
-
-  private static readonly MAX_RESPONSE_SIZE = 10000;
 
   private static cleanAndValidateJSON(content: string): string {
     // Remove any trailing characters

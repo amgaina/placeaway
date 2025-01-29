@@ -5,3 +5,5 @@ function ErrorView({ message }: { message: string }) {
     </div>
   );
 }
+
+export { ErrorView };

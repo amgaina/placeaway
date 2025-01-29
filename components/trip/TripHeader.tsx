@@ -1,9 +1,10 @@
 import { format } from 'date-fns';
-import { Calendar, Edit2, Save, X } from 'lucide-react';
+import { Calendar, Edit2, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { motion } from 'framer-motion';
 import { TripStatus } from '@prisma/client';
+import { TripWithDetails } from '@/types/trip';
 
 const statusColors = {
   PLANNING: 'bg-yellow-100 text-yellow-800',
@@ -17,7 +18,7 @@ export function TripHeader({
   onEdit,
   isEditing,
 }: {
-  trip: any;
+  trip: TripWithDetails;
   onEdit: (val: boolean) => void;
   isEditing: boolean;
 }) {
@@ -38,7 +39,7 @@ export function TripHeader({
           </Badge>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground mt-1">
-          {trip.startDate && (
+          {trip.startDate && trip.endDate && (
             <motion.div
               className="flex items-center gap-2"
               initial={{ opacity: 0 }}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getUserTrips } from '@/actions/trip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FaPlane, FaSpinner } from 'react-icons/fa';
+import { FaPlane } from 'react-icons/fa';
 import {
   Plus,
   GridIcon,

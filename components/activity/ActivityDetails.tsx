@@ -36,7 +36,9 @@ export const ActivityDetails: React.FC<ActivityDetailsProps> = ({
       <ActivityActions
         status={activity.status}
         onStatusChange={(status) => onStatusChange(activity.id, status)}
-        onAttachment={async (file: File) => {}}
+        onAttachment={async (file: File) => {
+          console.log(file);
+        }}
       />
     </div>
   );

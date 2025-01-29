@@ -8,7 +8,7 @@ import {
 import { LogoutButton } from '@/components/auth/logout-button';
 import { FaUser } from 'react-icons/fa';
 import { ExitIcon } from '@radix-ui/react-icons';
-import { Link, Settings, User } from 'lucide-react';
+import { Settings, User } from 'lucide-react';
 import { currentUser } from '@/lib/auth';
 import { DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
 

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
-import { Button } from '../ui/button';
 import { ActivityWithLocation } from '@/types/activity';
 import { ImageGallery } from './ImageGallery';
 import { ReviewsList } from './ReviewsList';
@@ -65,6 +64,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
     fetchPlaceDetails();
   }, [activity.location]);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <LoadingIndicator />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card onClick={onSelect} className="hover:shadow-md transition-shadow">

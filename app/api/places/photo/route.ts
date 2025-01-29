@@ -20,6 +20,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    console.error('Failed to fetch photo', error);
     return new NextResponse('Failed to fetch photo', { status: 500 });
   }
 }
