@@ -6,9 +6,6 @@ const SALT_ROUNDS = 10;
 
 async function main() {
   try {
-    // Clear existing users
-    await prisma.user.deleteMany();
-
     // Create admin user with proper salt rounds
     const adminPassword = await bcrypt.hash('Admin@123456', SALT_ROUNDS);
     await prisma.user.upsert({
