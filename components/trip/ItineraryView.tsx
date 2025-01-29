@@ -124,14 +124,11 @@ export function ItineraryView({
                                       details: activity,
                                     })
                                   }
-                                  onStatusChange={(id, status) =>
+                                  onStatusChange={async (id, status) =>
                                     onActivityUpdate?.(id, { status })
                                   }
-                                  onRating={(id, rating) =>
+                                  onRating={async (id, rating) =>
                                     onActivityUpdate?.(id, { rating })
-                                  }
-                                  onAttachment={(id, file) =>
-                                    console.log(id, file)
                                   }
                                 />
                               </motion.div>

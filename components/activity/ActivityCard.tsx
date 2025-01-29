@@ -18,7 +18,7 @@ interface ActivityCardProps {
   onSelect?: () => void;
   onStatusChange: (id: string, status: ActivityStatus) => Promise<void>;
   onRating: (id: string, rating: number) => Promise<void>;
-  onAttachment: (id: string, file: File) => Promise<void>;
+  onAttachment?: (id: string, file: File) => Promise<void>;
 }
 
 export const ActivityCard: React.FC<ActivityCardProps> = ({
@@ -100,24 +100,25 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             total={placeDetails.userRatingsTotal}
           />
         )}
-
-        <FileUpload
-          onUpload={async (files) => {
-            setIsLoading(true);
-            try {
-              await onAttachment(activity.id, files[0]);
-            } finally {
-              setIsLoading(false);
-            }
-          }}
-          activity={{
-            ...activity,
-            attachments: activity.attachments.map((attachment) => ({
-              ...attachment,
-              activityId: activity.id,
-            })),
-          }}
-        />
+        {onAttachment && (
+          <FileUpload
+            onUpload={async (files) => {
+              setIsLoading(true);
+              try {
+                await onAttachment(activity.id, files[0]);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            activity={{
+              ...activity,
+              attachments: activity.attachments.map((attachment) => ({
+                ...attachment,
+                activityId: activity.id,
+              })),
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );
