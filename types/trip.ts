@@ -6,7 +6,6 @@ import {
   ActivityStatus,
   TimeSlot,
   ActivityType,
-  Attachment,
 } from '@prisma/client';
 
 export interface Location {

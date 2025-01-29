@@ -11,7 +11,6 @@ import { BudgetTracker } from '@/components/trip/BudgetTracker';
 import { ItineraryView } from '@/components/trip/ItineraryView';
 import { ChatInterface } from '@/components/trip/ChatInterface';
 import { RecommendationsList } from '@/components/trip/RecommendationsList';
-import { FaDatabase, FaRobot, FaMapMarkedAlt } from 'react-icons/fa';
 import { LoadingSteps } from '@/components/loading/LoadingSteps';
 import { getTripWithDetails, updateTripPreferences } from '@/actions/trip';
 import FullPageErrorView from '@/components/error/full-page-error-view';
@@ -26,7 +25,7 @@ import { TripHeader } from '@/components/trip/TripHeader';
 import { TripActions } from '@/components/trip/TripActions';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BookOpen, Brain, Map, CheckCircle2 } from 'lucide-react';
 import {
   ActivityWithLocation,
   ItineraryWithActivities,
@@ -51,19 +50,25 @@ const loadingSteps = [
     id: 1,
     title: 'Fetching Trip Details',
     description: 'Loading your trip information...',
-    icon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
+    loadingIcon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
+    icon: <BookOpen className="w-5 h-5 text-primary" />,
+    doneIcon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
   },
   {
     id: 2,
     title: 'Processing Data',
     description: 'Analyzing trip preferences and recommendations...',
-    icon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
+    loadingIcon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
+    icon: <Brain className="w-5 h-5 text-primary" />,
+    doneIcon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
   },
   {
     id: 3,
     title: 'Loading Maps',
     description: 'Preparing location data and coordinates...',
-    icon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
+    loadingIcon: <Loader2 className="w-5 h-5 animate-spin text-primary" />,
+    icon: <Map className="w-5 h-5 text-primary" />,
+    doneIcon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
   },
 ];
 
@@ -74,7 +79,7 @@ export default function TripPage() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const params = useParams();
-  const [loadingStep, setLoadingStep] = useState(1);
+  const [loadingStep, setLoadingStep] = useState(2);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<{
     location: { lat: number; lng: number };
@@ -88,7 +93,7 @@ export default function TripPage() {
   useEffect(() => {
     async function loadTripData() {
       try {
-        setLoadingStep(1);
+        setLoadingStep(2);
         const result = await getTripWithDetails(params.id as string);
 
         if (result && 'data' in result && result.data) {
@@ -99,6 +104,7 @@ export default function TripPage() {
           if (result.data) {
             setTripData(result.data);
           }
+
           setSelectedPlace({
             location: {
               lat:

@@ -11,6 +11,7 @@ import {
   RecommendationPriority,
   RecommendationStatus,
   Trip,
+  ActivityType,
 } from '@prisma/client';
 import {
   AITripSuggestion,
@@ -25,10 +26,8 @@ import { differenceInDays, format } from 'date-fns';
 
 export default class TripAIService {
   private static openai = new OpenAI({
-    // baseURL: 'https://api.deepseek.com',
-    // apiKey: process.env.DEEPSEEK_API_KEY,
-    apiKey:
-      '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',
+    baseURL: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY,
   });
 
   private static readonly DATE_FORMAT = 'yyyy-MM-dd';
@@ -72,12 +71,8 @@ Edit
           "startTime": "ISO 8601",
           "endTime": "ISO 8601",
           "location": "string",
-          "lat": number?,
-          "lng": number?,
           "cost": number,
-          "rating": number,
           "feedback": "string?",
-          "status": "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED",
           "type": "ATTRACTION" | "MEAL" | "TRANSPORT" | "BREAK" | "ACCOMMODATION",
           "timeSlot": "MORNING" | "AFTERNOON" | "EVENING"
         }
@@ -111,20 +106,13 @@ Generate the output in valid JSON format only.`;
   }
 
   public static async getCoordinates(location: string) {
-    this.log('Getting coordinates for:', location);
     try {
-      const startTime = Date.now();
       const response = await this.geocoder.geocode({
         params: {
           address: location,
           key: process.env.GOOGLE_MAPS_API_KEY!,
         },
       });
-      this.log('Geocoding response time:', `${Date.now() - startTime}ms`);
-      this.log(
-        'Geocoding response:',
-        response.data.results[0]?.geometry?.location,
-      );
 
       if (response.data.results[0]) {
         return {
@@ -149,26 +137,38 @@ Generate the output in valid JSON format only.`;
     }
   }
 
+  private static mapActivityType(type: string): ActivityType {
+    try {
+      // Direct mapping to Prisma enum
+      const validTypes: Record<string, ActivityType> = {
+        ATTRACTION: 'ATTRACTION',
+        MEAL: 'MEAL',
+        TRANSPORT: 'TRANSPORT',
+        BREAK: 'BREAK',
+        ACCOMMODATION: 'ACCOMMODATION',
+        ACTIVITIES: 'ACTIVITIES',
+      };
+
+      const upperType = type?.toUpperCase();
+      return validTypes[upperType] || 'ATTRACTION';
+    } catch {
+      return 'ATTRACTION';
+    }
+  }
+
   static async transformActivityWithCoordinates(
     activity: AIActivity,
   ): Promise<AIActivity> {
     try {
-      const coordinates: AILocation | null = activity.location
+      const coordinates = activity.location
         ? await this.getCoordinates(activity.location)
         : null;
 
       return {
-        title: activity.title,
-        description: activity.description ?? null,
-        startTime:
-          this.parseDateTime(activity.startTime ?? null)?.toISOString() ?? null,
-        endTime:
-          this.parseDateTime(activity.endTime ?? null)?.toISOString() ?? null,
-        location: activity.location ?? null,
+        ...activity,
         lat: coordinates?.lat ?? null,
         lng: coordinates?.lng ?? null,
-        cost: activity.cost ?? null,
-        type: activity.type || 'ATTRACTION',
+        type: this.mapActivityType(activity.type || 'ATTRACTION'),
         timeSlot: activity.timeSlot || 'MORNING',
         status: 'PENDING',
         rating: 0,
@@ -353,27 +353,24 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
 
     while (retries < this.MAX_RETRIES) {
       try {
-        this.log('Generating trip suggestion:', preferences);
         const completion = await this.openai.chat.completions.create(
           {
-            model: 'chatgpt-4o',
+            model: 'deepseek-chat',
             messages: [
               { role: 'system', content: this.SYSTEM_PROMPT },
               { role: 'user', content: this.buildPrompt(preferences, trip) },
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.6,
-            max_tokens: 6000, // Reduced to prevent truncation
+            temperature: 0.7,
+            max_tokens: 2000, // Reduced to prevent truncation
           },
           { signal: controller.signal },
         );
 
-        console.log('completion', completion);
         const content = completion.choices[0].message.content;
         if (!content) throw new Error('Empty response from AI');
 
         const suggestion = this.cleanAndValidateJSON(content);
-        this.log('AI suggestion:', suggestion);
 
         const transformed = await this.transformAIResponse(suggestion);
         return transformed;
@@ -409,5 +406,35 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
     });
 
     return completion.choices[0].message.content || '';
+  }
+
+  static async test(tripId: string) {
+    const trip = await db.trip.findUnique({
+      where: { id: tripId },
+      include: { preferences: true },
+    });
+
+    if (!trip || !trip.preferences)
+      throw new Error('Trip or preferences not found');
+
+    const client = this.buildPrompt(
+      {
+        ...trip.preferences,
+        origin: trip.preferences.origin || undefined,
+        destination: trip.preferences.destination || 'Unknown',
+      },
+      trip,
+    );
+    const completion = await this.openai.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: this.SYSTEM_PROMPT },
+        { role: 'user', content: client },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+    });
+
+    return JSON.stringify(completion.choices[0].message.content);
   }
 }
