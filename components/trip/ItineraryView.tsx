@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ActivityCard } from '../activity/ActivityCard';
@@ -59,12 +59,8 @@ export function ItineraryView({
                 className="flex items-center justify-between w-full p-4 hover:bg-muted/50 rounded-lg"
               >
                 <h3 className="text-lg font-semibold">
-                  Day {day.day} - {format(day.date, 'EEEE, MMM dd')}
-                  {index === itinerary.length - 1 && (
-                    <span className="text-sm text-muted-foreground ml-2">
-                      (Last Day)
-                    </span>
-                  )}
+                  Day {day.day} -{' '}
+                  {format(addDays(new Date(day.date), 1), 'EEEE, MMM dd')}
                 </h3>
                 {day.weatherNote && (
                   <Badge variant="outline">{day.weatherNote}</Badge>
