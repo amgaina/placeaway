@@ -24,7 +24,7 @@ const Search_bar = () => {
         setPredictions([]);
         return;
       }
-      const predictions = await autocomplete('USA');
+      const predictions = await autocomplete(input);
       setPredictions(predictions || []);
     };
     fetchPredictions();
@@ -48,7 +48,11 @@ const Search_bar = () => {
         />
         <CommandList className="max-h-60 overflow-y-auto">
           {predictions.length === 0 ? (
-            <CommandEmpty>No results found.</CommandEmpty>
+            input.length != 0 ? (
+              <CommandEmpty>No results found.</CommandEmpty>
+            ) : (
+              <></>
+            )
           ) : (
             <CommandGroup heading="Suggestions">
               {predictions.map((prediction) => (
