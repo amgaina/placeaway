@@ -7,6 +7,7 @@ type Step = {
   title: string;
   description: string;
   icon: JSX.Element;
+  doneIcon?: JSX.Element;
 };
 
 export function LoadingSteps({
@@ -38,7 +39,7 @@ export function LoadingSteps({
           >
             <div className="flex-shrink-0">
               {step.id < currentStep ? (
-                <FaCheck className="w-6 h-6" />
+                step.doneIcon || <FaCheck className="w-6 h-6" />
               ) : step.id === currentStep ? (
                 <motion.div
                   animate={{ rotate: 360 }}

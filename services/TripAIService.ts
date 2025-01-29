@@ -11,6 +11,7 @@ import {
   RecommendationPriority,
   RecommendationStatus,
   Trip,
+  ActivityType,
 } from '@prisma/client';
 import {
   AITripSuggestion,
@@ -32,55 +33,62 @@ export default class TripAIService {
   private static readonly DATE_FORMAT = 'yyyy-MM-dd';
   private static readonly TIME_FORMAT = 'HH:mm:ss';
 
-  private static readonly SYSTEM_PROMPT = `Generate travel itinerary JSON:
-  {
-    "destination": string,
-    "budget": {
-      "total": number,
-      "accommodation": number,
-      "transport": number,
-      "activities": number,
-      "food": number,
-      "other": number
-    },
-    "recommendations": [{
-      "title": string (max 50 chars),
-      "description": string (max 200 chars),
-      "category": enum("TRANSPORT","ACCOMMODATION","FOOD","ACTIVITIES","SAFETY","GENERAL","OTHER"),
-      "priority": enum("LOW","MEDIUM","HIGH"),
-      "status": "PENDING"
-    }],
-    "itinerary": [{
-      "day": number,
-      "date": string (YYYY-MM-DD),
-      "weatherNote": string?,
-      "tips": string[],
-      "activities": [{
-        "title": string (max 50 chars),
-        "description": string (max 200 chars),
-        "startTime": string (ISO),
-        "endTime": string (ISO),
-        "location": string,
-        "lat": number?,
-        "lng": number?,
-        "cost": number,
-        "rating": number,
-        "feedback": string?,
-        "status": enum("PENDING","APPROVED","REJECTED","COMPLETED"),
-        "type": enum("ATTRACTION","MEAL","TRANSPORT","BREAK","ACCOMMODATION"),
-        "timeSlot": enum("MORNING","AFTERNOON","EVENING")
-      }]
-    }]
-  }
+  private static readonly SYSTEM_PROMPT = `Generate a structured travel itinerary in valid JSON format based on the following schema. Ensure all values adhere to the specified constraints.
 
-  Rules:
-  - Min 3 recommendations
-  - Activities across all timeSlots (MORNING, AFTERNOON, EVENING)
-  - Max 3 days itinerary if trip > 3 days, else all days
-  - 1 tip per day
-  - All costs in numbers
-  - All dates in ISO format
-  - All enums must match exactly`;
+Schema:
+json
+Copy
+Edit
+{
+  "destination": "string",
+  "budget": {
+    "total": number,
+    "accommodation": number,
+    "transport": number,
+    "activities": number,
+    "food": number,
+    "other": number
+  },
+  "recommendations": [
+    {
+      "title": "string (max 50 chars)",
+      "description": "string (max 200 chars)",
+      "category": "TRANSPORT" | "ACCOMMODATION" | "FOOD" | "ACTIVITIES" | "SAFETY" | "GENERAL" | "OTHER",
+      "priority": "LOW" | "MEDIUM" | "HIGH",
+      "status": "PENDING"
+    }
+  ],
+  "itinerary": [
+    {
+      "day": number,
+      "date": "YYYY-MM-DD",
+      "weatherNote": "string?",
+      "tips": ["string"],
+      "activities": [
+        {
+          "title": "string (max 50 chars)",
+          "description": "string (max 200 chars)",
+          "startTime": "ISO 8601",
+          "endTime": "ISO 8601",
+          "location": "string",
+          "cost": number,
+          "feedback": "string?",
+          "type": "ATTRACTION" | "MEAL" | "TRANSPORT" | "BREAK" | "ACCOMMODATION",
+          "timeSlot": "MORNING" | "AFTERNOON" | "EVENING"
+        }
+      ]
+    }
+  ]
+}
+Rules:
+Minimum 3 recommendations required.
+Activities must be distributed across MORNING, AFTERNOON, and EVENING time slots.
+For trips longer than 3 days, only a 3-day itinerary is generated; otherwise, include all days.
+Each day must have at least 1 tip.
+All costs must be numbers.
+Dates must follow ISO format (YYYY-MM-DD).
+Enum values must match exactly as specified.
+Generate the output in valid JSON format only.`;
 
   private static readonly MAX_RETRIES = 1;
 
@@ -98,20 +106,13 @@ export default class TripAIService {
   }
 
   public static async getCoordinates(location: string) {
-    this.log('Getting coordinates for:', location);
     try {
-      const startTime = Date.now();
       const response = await this.geocoder.geocode({
         params: {
           address: location,
           key: process.env.GOOGLE_MAPS_API_KEY!,
         },
       });
-      this.log('Geocoding response time:', `${Date.now() - startTime}ms`);
-      this.log(
-        'Geocoding response:',
-        response.data.results[0]?.geometry?.location,
-      );
 
       if (response.data.results[0]) {
         return {
@@ -136,26 +137,38 @@ export default class TripAIService {
     }
   }
 
+  private static mapActivityType(type: string): ActivityType {
+    try {
+      // Direct mapping to Prisma enum
+      const validTypes: Record<string, ActivityType> = {
+        ATTRACTION: 'ATTRACTION',
+        MEAL: 'MEAL',
+        TRANSPORT: 'TRANSPORT',
+        BREAK: 'BREAK',
+        ACCOMMODATION: 'ACCOMMODATION',
+        ACTIVITIES: 'ACTIVITIES',
+      };
+
+      const upperType = type?.toUpperCase();
+      return validTypes[upperType] || 'ATTRACTION';
+    } catch {
+      return 'ATTRACTION';
+    }
+  }
+
   static async transformActivityWithCoordinates(
     activity: AIActivity,
   ): Promise<AIActivity> {
     try {
-      const coordinates: AILocation | null = activity.location
+      const coordinates = activity.location
         ? await this.getCoordinates(activity.location)
         : null;
 
       return {
-        title: activity.title,
-        description: activity.description ?? null,
-        startTime:
-          this.parseDateTime(activity.startTime ?? null)?.toISOString() ?? null,
-        endTime:
-          this.parseDateTime(activity.endTime ?? null)?.toISOString() ?? null,
-        location: activity.location ?? null,
+        ...activity,
         lat: coordinates?.lat ?? null,
         lng: coordinates?.lng ?? null,
-        cost: activity.cost ?? null,
-        type: activity.type || 'ATTRACTION',
+        type: this.mapActivityType(activity.type || 'ATTRACTION'),
         timeSlot: activity.timeSlot || 'MORNING',
         status: 'PENDING',
         rating: 0,
@@ -301,25 +314,19 @@ export default class TripAIService {
     return `Create a ${tripDuration}-day trip itinerary as a JSON object for:
 
 Location Details:
-- Destination: ${preferences.destination}
-- Starting from: ${preferences.origin || 'Not specified'}
-- Trip dates: ${format(trip.startDate ?? new Date(), 'PPP')} to ${format(trip.endDate ?? new Date(), 'PPP')}
-
+Destination: ${preferences.destination}
+Starting from: ${preferences.origin || 'Not specified'}
+Trip dates: ${format(trip.startDate ?? new Date(), 'PPP')} to ${format(trip.endDate ?? new Date(), 'PPP')}
 Group Details:
-- Size: ${preferences.visitorCount} people
-- Type: ${preferences.hasChildren ? 'Family with children' : 'Adults only'}
+Size: ${preferences.visitorCount} people
+Type: ${preferences.hasChildren ? 'Family with children' : 'Adults only'}
 ${preferences.hasPets ? '- Special: Traveling with pets' : ''}
-
-
 Interests:
 ${preferences.interests.map((interest) => `- ${interest}`).join('\n')}
 
-
 Special Requirements:
 ${preferences.hasPets ? '- Pets: Please include pet-friendly activities' : ''}
-${preferences.hasChildren ? '- Children: Include family-friendly activities' : ''}
-
-}`;
+${preferences.hasChildren ? '- Children: Include family-friendly activities' : ''}`;
   }
 
   private static readonly MAX_RESPONSE_SIZE = 10000;
@@ -346,7 +353,6 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
 
     while (retries < this.MAX_RETRIES) {
       try {
-        this.log('Generating trip suggestion:', preferences);
         const completion = await this.openai.chat.completions.create(
           {
             model: 'deepseek-chat',
@@ -355,18 +361,16 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
               { role: 'user', content: this.buildPrompt(preferences, trip) },
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.6,
-            max_tokens: 6000, // Reduced to prevent truncation
+            temperature: 0.7,
+            max_tokens: 2000, // Reduced to prevent truncation
           },
           { signal: controller.signal },
         );
 
-        console.log('completion', completion);
         const content = completion.choices[0].message.content;
         if (!content) throw new Error('Empty response from AI');
 
         const suggestion = this.cleanAndValidateJSON(content);
-        this.log('AI suggestion:', suggestion);
 
         const transformed = await this.transformAIResponse(suggestion);
         return transformed;
@@ -402,5 +406,35 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
     });
 
     return completion.choices[0].message.content || '';
+  }
+
+  static async test(tripId: string) {
+    const trip = await db.trip.findUnique({
+      where: { id: tripId },
+      include: { preferences: true },
+    });
+
+    if (!trip || !trip.preferences)
+      throw new Error('Trip or preferences not found');
+
+    const client = this.buildPrompt(
+      {
+        ...trip.preferences,
+        origin: trip.preferences.origin || undefined,
+        destination: trip.preferences.destination || 'Unknown',
+      },
+      trip,
+    );
+    const completion = await this.openai.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: this.SYSTEM_PROMPT },
+        { role: 'user', content: client },
+      ],
+      temperature: 0.7,
+      max_tokens: 200,
+    });
+
+    return JSON.stringify(completion.choices[0].message.content);
   }
 }

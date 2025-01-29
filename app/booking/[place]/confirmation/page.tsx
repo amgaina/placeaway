@@ -76,21 +76,8 @@ export default function ConfirmationPage() {
         const tripResult = await createTrip(tripData);
         if (tripResult.error || !tripResult.data?.id)
           throw new Error(tripResult.error);
-
-        // Step 2: Generate AI Suggestions
-        setCurrentStep(2);
-        const aiResult = await generateTripSuggestions(
-          tripResult.data?.id,
-          tripData,
-        );
-        if (aiResult.error) throw new Error(aiResult.error);
-
-        // Step 3: Prepare Redirect
-        setCurrentStep(3);
-        toast.success('Trip created successfully!');
-
-        await new Promise((resolve) => setTimeout(resolve, 1000));
         router.push(`/trip/${tripResult.data?.id}`);
+        return;
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Something went wrong');
       }

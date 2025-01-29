@@ -70,9 +70,7 @@ export async function getUserTrips() {
   try {
     const user = await currentUser();
     if (!user?.id) return { error: 'Unauthorized' };
-    console.log('user', user);
     const trips = await TripService.getUserTrips(user.id);
-    console.log('trips', trips);
     return { success: 'Trips fetched successfully', data: trips };
   } catch (error) {
     return { error: 'Failed to fetch trips' };
@@ -85,9 +83,10 @@ export async function getTripWithDetails(tripId: string) {
 
     const user = await currentUser();
     if (!user || !user.id) return { error: 'Unauthorized' };
+    console.log('testing');
 
     const trip = await TripService.getTripWithDetails(tripId);
-
+    console.log('returning', trip);
     if (!trip) return { error: 'Trip not found' };
 
     return { success: 'Trip fetched successfully', data: trip };
@@ -105,22 +104,13 @@ export async function generateTripSuggestions(
     if (!user || !user.id) return { error: 'Unauthorized' };
     const trip = await TripService.getUserTrip(user.id, tripId);
     if (!trip) return { error: 'Trip not found' };
-    console.log('trip', trip);
-    const test = await TripAIService.processChatMessage(tripId, [
-      {
-        role: 'user',
-        content: JSON.stringify(data.preferences),
-      },
-    ]);
-
-    console.log('test', test);
 
     const suggestions = await TripAIService.generateTripSuggestion(
       data.preferences,
       trip,
     );
 
-    console.log('suggestions', suggestions);
+    console.log('DONE!');
     if (!suggestions || !suggestions.budget || !suggestions.itinerary) {
       return { error: 'Failed to generate suggestions' };
     }
