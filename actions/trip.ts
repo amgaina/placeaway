@@ -6,7 +6,6 @@ import {
   TripPreferenceSchema,
   TripUpdateSchema,
   BudgetSchema,
-  TripPreferenceInput,
 } from '@/schemas/trip';
 import { currentUser } from '@/lib/auth';
 import TripAIService from '@/services/TripAIService';
@@ -19,6 +18,7 @@ export async function createTrip(values: z.infer<typeof TripPreferenceSchema>) {
     const trip = await TripService.createTrip(user.id, values);
     return { success: 'Trip created successfully', data: trip };
   } catch (error) {
+    console.error('Failed to create trip', error);
     return { error: 'Failed to create trip' };
   }
 }
@@ -34,6 +34,7 @@ export async function updateTrip(
     const trip = await TripService.updateTrip(tripId, values);
     return { success: 'Trip updated successfully', data: trip };
   } catch (error) {
+    console.error('Failed to update trip', error);
     return { error: 'Failed to update trip' };
   }
 }
@@ -49,6 +50,7 @@ export async function updateTripBudget(
     const budget = await TripService.updateBudget(tripId, values);
     return { success: 'Budget updated successfully', data: budget };
   } catch (error) {
+    console.error('Failed to update budget', error);
     return { error: 'Failed to update budget' };
   }
 }
@@ -73,6 +75,7 @@ export async function getUserTrips() {
     const trips = await TripService.getUserTrips(user.id);
     return { success: 'Trips fetched successfully', data: trips };
   } catch (error) {
+    console.error('Failed to fetch trips', error);
     return { error: 'Failed to fetch trips' };
   }
 }
@@ -91,6 +94,7 @@ export async function getTripWithDetails(tripId: string) {
 
     return { success: 'Trip fetched successfully', data: trip };
   } catch (error) {
+    console.error('Failed to fetch trip', error);
     return { error: 'Failed to fetch trip' };
   }
 }
@@ -121,6 +125,7 @@ export async function generateTripSuggestions(
 
     return { success: 'Suggestions generated successfully', data: updatedTrip };
   } catch (error) {
+    console.error('Failed to generate suggestions', error);
     return { error: 'Failed to generate suggestions' };
   }
 }
@@ -154,6 +159,7 @@ export async function updateTripPreferences(
 
     return { success: 'Trip updated successfully', data: updatedTrip };
   } catch (error) {
+    console.error('Failed to update trip', error);
     return { error: 'Failed to update trip' };
   }
 }
@@ -166,6 +172,7 @@ export async function deleteTrip(tripId: string) {
     await TripService.deleteTrip(tripId);
     return { success: 'Trip deleted successfully' };
   } catch (error) {
+    console.error('Failed to delete trip', error);
     return { error: 'Failed to delete trip' };
   }
 }
