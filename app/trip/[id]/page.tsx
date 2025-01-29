@@ -219,21 +219,8 @@ export default function TripPage() {
               <div className="lg:col-span-2 space-y-6">
                 <TravelOverview data={tripData} />
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Trip Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <Progress value={33} className="h-2" />
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Planning</span>
-                        <span>In Progress</span>
-                        <span>Completed</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                {tripData.budget && <BudgetTracker budget={tripData.budget} />}
+
                 {tripData.itineraries && (
                   <ItineraryView
                     itinerary={tripData.itineraries}
@@ -241,8 +228,6 @@ export default function TripPage() {
                     onActivityUpdate={handleActivityUpdate}
                   />
                 )}
-
-                {tripData.budget && <BudgetTracker budget={tripData.budget} />}
               </div>
 
               {/* Map Sidebar */}
