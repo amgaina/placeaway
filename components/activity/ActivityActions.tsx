@@ -1,5 +1,5 @@
 import { ActivityStatus } from '@prisma/client';
-import { Check, X, Upload, Loader2 } from 'lucide-react';
+import { Check, X, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   Tooltip,
@@ -101,13 +101,13 @@ export function ActivityActions({
                   disabled={isLoading}
                   asChild
                 >
-                  <span>
+                  {/* <span>
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Upload className="w-4 h-4" />
                     )}
-                  </span>
+                  </span> */}
                 </Button>
               </label>
             </div>
