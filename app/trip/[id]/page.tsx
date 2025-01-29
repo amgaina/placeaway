@@ -80,7 +80,6 @@ export default function TripPage() {
 
         if (result && 'data' in result && result.data) {
           setLoadingStep(2);
-          console.log(result.data);
           setIsGeneratingAI(true);
           // const transformedData = transformTripData(result.data);
           if (result.data) {

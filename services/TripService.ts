@@ -156,14 +156,10 @@ export class TripService {
     reGenerateAISuggestion = true,
   ): Promise<TripWithDetails | null> {
     try {
-      console.log('1. Starting getTripWithDetails');
-
       if (!tripId) {
-        console.log('2. No tripId provided');
         throw new Error('Trip ID is required');
       }
 
-      console.log('3. Finding trip:', tripId);
       const trip = await db.$transaction(async (tx) => {
         const result = await tx.trip.findUnique({
           where: { id: tripId },
@@ -187,17 +183,13 @@ export class TripService {
             },
           },
         });
-
-        console.log('4. Database query completed');
         return result;
       });
 
-      console.log('5. Trip found:', !!trip);
       if (!trip) {
         return null;
       }
 
-      console.log('6. Checking AI suggestions');
       if (!trip.hasAISuggestions && reGenerateAISuggestion) {
         if (!trip.preferences) {
           throw new Error('Trip preferences not found');
@@ -208,7 +200,6 @@ export class TripService {
         if (!destination) {
           throw new Error('Trip destination is required');
         }
-        console.log('7. Generating AI suggestions');
         const suggestions = await TripAIService.generateTripSuggestion(
           {
             ...rest,
@@ -218,14 +209,11 @@ export class TripService {
           trip,
         );
 
-        console.log('8. AI suggestions generated:', !!suggestions);
         if (suggestions) {
-          console.log('9. Updating trip with AI suggestions');
           const updatedTrip = await this.updateTripWithAISuggestions(
             tripId,
             suggestions,
           );
-          console.log('10. Trip updated with AI suggestions');
           return updatedTrip;
         } else {
           throw new Error('Failed to generate AI suggestions');
@@ -243,11 +231,7 @@ export class TripService {
     tripId: string,
     suggestions: AITripSuggestion,
   ): Promise<TripWithDetails | null> {
-    const debug = (message: string) => console.log(`[Debug] ${message}`);
-
     try {
-      debug('Starting transaction');
-
       const result = await db.$transaction(
         async (tx) => {
           try {
@@ -259,7 +243,6 @@ export class TripService {
                 aiGeneratedAt: new Date(),
               },
             });
-            debug('1. Trip updated');
 
             // 2. Update budget
             if (suggestions.budget) {
@@ -268,7 +251,6 @@ export class TripService {
                 update: suggestions.budget,
                 create: { ...suggestions.budget, tripId },
               });
-              debug('2. Budget updated');
             }
 
             // 3. Create recommendations
@@ -283,7 +265,6 @@ export class TripService {
                   status: 'PENDING',
                 })),
               });
-              debug('3. Recommendations created');
             }
 
             // 4. Create itineraries with validation
@@ -298,7 +279,6 @@ export class TripService {
                     tips: day.tips ?? [],
                   },
                 });
-                debug(`4a. Created itinerary for day ${day.day}`);
 
                 if (day.activities?.length) {
                   await tx.activity.createMany({
@@ -317,7 +297,6 @@ export class TripService {
                       timeSlot: activity.timeSlot ?? 'MORNING',
                     })),
                   });
-                  debug(`4b. Created activities for day ${day.day}`);
                 }
               }
             }
@@ -349,11 +328,9 @@ export class TripService {
             if (!finalTrip) {
               throw new Error('Failed to verify final trip state');
             }
-            debug('5. Final trip verification successful');
 
             return finalTrip;
           } catch (txError) {
-            debug(`Transaction error: ${txError}`);
             throw txError;
           }
         },
@@ -363,10 +340,8 @@ export class TripService {
         },
       );
 
-      debug('Transaction completed successfully');
       return result;
     } catch (error) {
-      debug(`Fatal error: ${error}`);
       throw error;
     }
   }

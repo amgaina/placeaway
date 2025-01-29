@@ -50,7 +50,6 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         }
 
         toast.success('Place details loaded');
-        console.log('Place details:', result.data);
 
         setPlaceDetails(result.data);
       } catch (err) {

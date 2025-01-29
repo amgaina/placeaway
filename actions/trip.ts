@@ -86,10 +86,8 @@ export async function getTripWithDetails(tripId: string) {
 
     const user = await currentUser();
     if (!user || !user.id) return { error: 'Unauthorized' };
-    console.log('testing');
 
     const trip = await TripService.getTripWithDetails(tripId);
-    console.log('returning', trip);
     if (!trip) return { error: 'Trip not found' };
 
     return { success: 'Trip fetched successfully', data: trip };
@@ -114,7 +112,6 @@ export async function generateTripSuggestions(
       trip,
     );
 
-    console.log('DONE!');
     if (!suggestions || !suggestions.budget || !suggestions.itinerary) {
       return { error: 'Failed to generate suggestions' };
     }
@@ -146,8 +143,6 @@ export async function updateTripPreferences(
       values.preferences,
       trip,
     );
-
-    console.log('suggestions', suggestions);
 
     if (!suggestions) {
       return { error: 'Failed to generate AI suggestions' };
