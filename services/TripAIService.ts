@@ -25,62 +25,75 @@ import { differenceInDays, format } from 'date-fns';
 
 export default class TripAIService {
   private static openai = new OpenAI({
-    baseURL: 'https://api.deepseek.com',
-    apiKey: process.env.DEEPSEEK_API_KEY,
+    // baseURL: 'https://api.deepseek.com',
+    // apiKey: process.env.DEEPSEEK_API_KEY,
+    apiKey:
+      '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',
   });
 
   private static readonly DATE_FORMAT = 'yyyy-MM-dd';
   private static readonly TIME_FORMAT = 'HH:mm:ss';
 
-  private static readonly SYSTEM_PROMPT = `Generate travel itinerary JSON:
-  {
-    "destination": string,
-    "budget": {
-      "total": number,
-      "accommodation": number,
-      "transport": number,
-      "activities": number,
-      "food": number,
-      "other": number
-    },
-    "recommendations": [{
-      "title": string (max 50 chars),
-      "description": string (max 200 chars),
-      "category": enum("TRANSPORT","ACCOMMODATION","FOOD","ACTIVITIES","SAFETY","GENERAL","OTHER"),
-      "priority": enum("LOW","MEDIUM","HIGH"),
-      "status": "PENDING"
-    }],
-    "itinerary": [{
-      "day": number,
-      "date": string (YYYY-MM-DD),
-      "weatherNote": string?,
-      "tips": string[],
-      "activities": [{
-        "title": string (max 50 chars),
-        "description": string (max 200 chars),
-        "startTime": string (ISO),
-        "endTime": string (ISO),
-        "location": string,
-        "lat": number?,
-        "lng": number?,
-        "cost": number,
-        "rating": number,
-        "feedback": string?,
-        "status": enum("PENDING","APPROVED","REJECTED","COMPLETED"),
-        "type": enum("ATTRACTION","MEAL","TRANSPORT","BREAK","ACCOMMODATION"),
-        "timeSlot": enum("MORNING","AFTERNOON","EVENING")
-      }]
-    }]
-  }
+  private static readonly SYSTEM_PROMPT = `Generate a structured travel itinerary in valid JSON format based on the following schema. Ensure all values adhere to the specified constraints.
 
-  Rules:
-  - Min 3 recommendations
-  - Activities across all timeSlots (MORNING, AFTERNOON, EVENING)
-  - Max 3 days itinerary if trip > 3 days, else all days
-  - 1 tip per day
-  - All costs in numbers
-  - All dates in ISO format
-  - All enums must match exactly`;
+Schema:
+json
+Copy
+Edit
+{
+  "destination": "string",
+  "budget": {
+    "total": number,
+    "accommodation": number,
+    "transport": number,
+    "activities": number,
+    "food": number,
+    "other": number
+  },
+  "recommendations": [
+    {
+      "title": "string (max 50 chars)",
+      "description": "string (max 200 chars)",
+      "category": "TRANSPORT" | "ACCOMMODATION" | "FOOD" | "ACTIVITIES" | "SAFETY" | "GENERAL" | "OTHER",
+      "priority": "LOW" | "MEDIUM" | "HIGH",
+      "status": "PENDING"
+    }
+  ],
+  "itinerary": [
+    {
+      "day": number,
+      "date": "YYYY-MM-DD",
+      "weatherNote": "string?",
+      "tips": ["string"],
+      "activities": [
+        {
+          "title": "string (max 50 chars)",
+          "description": "string (max 200 chars)",
+          "startTime": "ISO 8601",
+          "endTime": "ISO 8601",
+          "location": "string",
+          "lat": number?,
+          "lng": number?,
+          "cost": number,
+          "rating": number,
+          "feedback": "string?",
+          "status": "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED",
+          "type": "ATTRACTION" | "MEAL" | "TRANSPORT" | "BREAK" | "ACCOMMODATION",
+          "timeSlot": "MORNING" | "AFTERNOON" | "EVENING"
+        }
+      ]
+    }
+  ]
+}
+Rules:
+Minimum 3 recommendations required.
+Activities must be distributed across MORNING, AFTERNOON, and EVENING time slots.
+For trips longer than 3 days, only a 3-day itinerary is generated; otherwise, include all days.
+Each day must have at least 1 tip.
+All costs must be numbers.
+Dates must follow ISO format (YYYY-MM-DD).
+Enum values must match exactly as specified.
+Generate the output in valid JSON format only.`;
 
   private static readonly MAX_RETRIES = 1;
 
@@ -301,25 +314,19 @@ export default class TripAIService {
     return `Create a ${tripDuration}-day trip itinerary as a JSON object for:
 
 Location Details:
-- Destination: ${preferences.destination}
-- Starting from: ${preferences.origin || 'Not specified'}
-- Trip dates: ${format(trip.startDate ?? new Date(), 'PPP')} to ${format(trip.endDate ?? new Date(), 'PPP')}
-
+Destination: ${preferences.destination}
+Starting from: ${preferences.origin || 'Not specified'}
+Trip dates: ${format(trip.startDate ?? new Date(), 'PPP')} to ${format(trip.endDate ?? new Date(), 'PPP')}
 Group Details:
-- Size: ${preferences.visitorCount} people
-- Type: ${preferences.hasChildren ? 'Family with children' : 'Adults only'}
+Size: ${preferences.visitorCount} people
+Type: ${preferences.hasChildren ? 'Family with children' : 'Adults only'}
 ${preferences.hasPets ? '- Special: Traveling with pets' : ''}
-
-
 Interests:
 ${preferences.interests.map((interest) => `- ${interest}`).join('\n')}
 
-
 Special Requirements:
 ${preferences.hasPets ? '- Pets: Please include pet-friendly activities' : ''}
-${preferences.hasChildren ? '- Children: Include family-friendly activities' : ''}
-
-}`;
+${preferences.hasChildren ? '- Children: Include family-friendly activities' : ''}`;
   }
 
   private static readonly MAX_RESPONSE_SIZE = 10000;
@@ -349,7 +356,7 @@ ${preferences.hasChildren ? '- Children: Include family-friendly activities' : '
         this.log('Generating trip suggestion:', preferences);
         const completion = await this.openai.chat.completions.create(
           {
-            model: 'deepseek-chat',
+            model: 'chatgpt-4o',
             messages: [
               { role: 'system', content: this.SYSTEM_PROMPT },
               { role: 'user', content: this.buildPrompt(preferences, trip) },

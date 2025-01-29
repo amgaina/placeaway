@@ -106,14 +106,6 @@ export async function generateTripSuggestions(
     const trip = await TripService.getUserTrip(user.id, tripId);
     if (!trip) return { error: 'Trip not found' };
     console.log('trip', trip);
-    const test = await TripAIService.processChatMessage(tripId, [
-      {
-        role: 'user',
-        content: JSON.stringify(data.preferences),
-      },
-    ]);
-
-    console.log('test', test);
 
     const suggestions = await TripAIService.generateTripSuggestion(
       data.preferences,
