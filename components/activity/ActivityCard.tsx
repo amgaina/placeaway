@@ -49,8 +49,6 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           throw new Error('No place details found');
         }
 
-        toast.success('Place details loaded');
-
         setPlaceDetails(result.data);
       } catch (err) {
         toast.error('Failed to load place details');
