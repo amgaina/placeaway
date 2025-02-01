@@ -1,9 +1,17 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import MainHeader from '@/components/header/MainHeader';
+import dynamic from 'next/dynamic';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import MainFooter from '@/components/footer/MainFooter';
+
+// Dynamic imports for client components
+const MainHeader = dynamic(() => import('@/components/header/MainHeader'), {
+  ssr: true,
+});
+
+const MainFooter = dynamic(() => import('@/components/footer/MainFooter'), {
+  ssr: true,
+});
 
 export const metadata: Metadata = {
   title: 'Placeaway',
@@ -17,11 +25,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased`}>
+      <body className="antialiased" suppressHydrationWarning>
         <TooltipProvider>
           <MainHeader />
           <Toaster />
-          {children}
+          <main>{children}</main>
           <MainFooter />
         </TooltipProvider>
       </body>
